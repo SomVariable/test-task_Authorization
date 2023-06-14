@@ -16,7 +16,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: { id: number }) {
-    console.log('we enter to the validate in JWTSTR')
     const user = await this.userService.findById(payload.id);
     if (!user) {
       throw new UnauthorizedException('You do not have access');

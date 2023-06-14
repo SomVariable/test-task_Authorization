@@ -15,10 +15,20 @@ enum Roles {
   user
 }
 
+enum Status {
+  pending
+  active
+  bloked
+}
+
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  login String @unique
-  hash  String
-  role  Roles
+  id                        Int     @id @default(autoincrement())
+  email                     String  @unique
+  login                     String  @unique
+  hash                      String
+  verification_key          String? @default("")
+  verification_timestemp    String? @default("")
+  role                      Roles   @default(user)
+  status                    Status  @default(pending)
+  isConfirmedChangePassword Boolean @default(false)
 }

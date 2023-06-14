@@ -27,9 +27,11 @@ export class UserController {
   }
 
   @Patch(':id')
-  changePassword(@Param('id') id: string, @Body(HashPasswordPipe) {password}: UpdateUserDto) {
+  changePassword(@Param('id') id: string, @Body(new HashPasswordPipe('password')) {password}: UpdateUserDto) {
     return this.userService.changePassword(+id, password);
   }
+  
+  
 
   @Delete(':id')
   remove(@Param('id') id: string) {

@@ -7,26 +7,27 @@ export class CreateUserDto {
     @IsEmail()
     @IsNotEmpty()
     @MinLength(4)
-    @MaxLength(20)
+    @MaxLength(30)
     email: string;
 
     @ApiProperty()
     @IsNotEmpty()
     @MinLength(4)
-    @MaxLength(20)
+    @MaxLength(30)
     login: string;
     
     @ApiProperty()
     @IsNotEmpty()
     @MinLength(8)
-    @MaxLength(20)
+    @MaxLength(30)
     @Matches(
         /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
         { message: 'password too weak' },
     )
     password: string;
     
-    @ApiProperty()
-    @IsEnum(Roles)
-    role: Roles;
+    // role?: Roles
+
+    
+    
 }
