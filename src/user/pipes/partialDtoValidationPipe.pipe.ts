@@ -14,7 +14,7 @@ export class PartialDtoValidationPipe implements PipeTransform<any> {
     }
 
     if (typeof value !== 'object' || Object.keys(value).length === 0) {
-      
+      return value
     }
 
     const _value = plainToClass(CreateUserDto, value);

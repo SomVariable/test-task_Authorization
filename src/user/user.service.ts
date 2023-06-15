@@ -28,7 +28,6 @@ export class UserService {
     } finally {
       this.prismaService.onModuleDestroy()
     }
-
   }
 
   async findAll(): Promise<User[]> {
@@ -104,7 +103,7 @@ export class UserService {
 
   }
 
-  async updateField(id: number, data: Partial<User>): Promise<string> {
+  async updateProperty(id: number, data: Partial<User>): Promise<string> {
     this.prismaService.onModuleInit()
 
     try {
@@ -116,6 +115,7 @@ export class UserService {
       return `user ${updateUser.login} was updated`
 
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         'Failed to update user',
         HttpStatus.INTERNAL_SERVER_ERROR,

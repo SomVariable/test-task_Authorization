@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,17 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-enum Roles {
-  admin
-  user
-}
-
-enum Status {
-  pending
-  active
-  bloked
 }
 
 model User {
@@ -31,4 +17,15 @@ model User {
   role                      Roles   @default(user)
   status                    Status  @default(pending)
   isConfirmedChangePassword Boolean @default(false)
+}
+
+enum Roles {
+  admin
+  user
+}
+
+enum Status {
+  pending
+  active
+  blocked
 }

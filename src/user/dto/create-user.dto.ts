@@ -1,5 +1,4 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Roles } from "@prisma/client";
 import { IsEmail, IsNotEmpty, MinLength, MaxLength, Matches, IsEnum } from "class-validator";
 
 export class CreateUserDto {
@@ -25,9 +24,6 @@ export class CreateUserDto {
         { message: 'password too weak' },
     )
     password: string;
-    
-    // role?: Roles
 
-    
     
 }

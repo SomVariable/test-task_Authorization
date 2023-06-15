@@ -89,7 +89,7 @@ export class AuthService {
   }
 
   async blockUser(email: string): Promise<string> {
-    const isUpdated = await this.userService.chageStatus(email, Status.bloked);
+    const isUpdated = await this.userService.chageStatus(email, Status.blocked);
 
     if (isUpdated) {
       return "user status was changed"
@@ -115,26 +115,22 @@ export class AuthService {
       const newData: Partial<User> = {
         isConfirmedChangePassword: true
       }
-      this.userService.updateField(id, newData)
+      this.userService.updateProperty(id, newData)
     } else {
       const newData: Partial<User> = {
         isConfirmedChangePassword: false
       }
-      this.userService.updateField(id, newData)
+      this.userService.updateProperty(id, newData)
     }
   }
 
   async submitNewPassword(email: string, password: string) {
-    console.log('------------------------------------------')
-    console.log(email)
     const user: User = await this.userService.findByEmail(email);
     const {id, isConfirmedChangePassword} = user
-    console.log(user)
     if(isConfirmedChangePassword){
       const newData : Partial<User> = {hash: password}
       this.changeIsConfirmedChangePassword(email, false)
-      console.log('submitNewPassword ', id, isConfirmedChangePassword , newData)
-      return  await this.userService.updateField(id, newData)
+      return  await this.userService.updateProperty(id, newData)
     }else{
       throw new UnauthorizedException('you are not verified')
     }

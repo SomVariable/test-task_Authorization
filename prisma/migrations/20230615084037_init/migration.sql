@@ -2,7 +2,7 @@
 CREATE TYPE "Roles" AS ENUM ('admin', 'user');
 
 -- CreateEnum
-CREATE TYPE "Status" AS ENUM ('pending', 'active', 'bloked');
+CREATE TYPE "Status" AS ENUM ('pending', 'active', 'blocked');
 
 -- CreateTable
 CREATE TABLE "User" (
