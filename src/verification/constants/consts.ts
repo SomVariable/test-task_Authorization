@@ -1,0 +1,1 @@
+export const VERIFY_KEY_TIMESTAMP: number = 600000

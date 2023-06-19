@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -16,6 +17,7 @@ async function bootstrap() {
     .setDescription('-')
     .setVersion('1.0')
     .addTag('authorization')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

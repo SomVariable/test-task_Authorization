@@ -1,7 +1,8 @@
-import { HttpException, HttpStatus, Injectable, UsePipes } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable, UsePipes } from '@nestjs/common';
 import { Prisma, Status, User, Roles } from '@prisma/client';
-import { PrismaService } from 'src/database/prisma.service';
-
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaService } from '../database/prisma.service';
+import { generateResponseMessage } from '../helpers/createResObject';
 
 @Injectable()
 export class UserService {
@@ -13,14 +14,22 @@ export class UserService {
     this.prismaService.onModuleInit()
     try {
       const newUser: User = await this.prismaService.user.create({
-        data: {
-          ...data
-        }
+        data
       })
-      return newUser;
 
+      return newUser;
     } catch (error) {
+      if(error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        const targets : string[] = Array.isArray(error.meta?.target)? error.meta?.target : []
+        
+        throw new BadRequestException(generateResponseMessage({
+          message: `user with such data has already exist`,
+          additionalInfo: { duplicateProperty: targets }
+        }))
+      }
+      
       console.log(error)
+
       throw new HttpException(
         'Failed to create user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -33,8 +42,8 @@ export class UserService {
   async findAll(): Promise<User[]> {
     this.prismaService.onModuleInit()
     try {
-      const allUsers = this.prismaService.user.findMany({})
-
+      const allUsers: User[] = await this.prismaService.user.findMany({})
+      
       return allUsers
 
     } catch (error) {
@@ -50,7 +59,11 @@ export class UserService {
   async findById(id: number): Promise<User> {
     this.prismaService.onModuleInit()
     try {
-      const user = this.prismaService.user.findFirst({ where: { id } })
+      const user: User | null = await this.prismaService.user.findFirst({ where: { id } })
+      
+      if(!user){
+        throw new BadRequestException(generateResponseMessage({message: `there is no user with id: ${id}`}))
+      }
 
       return user
 
@@ -64,10 +77,14 @@ export class UserService {
     }
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findBy(params: Partial<Prisma.UserCreateInput>): Promise<User> {
     this.prismaService.onModuleInit()
     try {
-      const user: User = await this.prismaService.user.findFirst({ where: { email } })
+      const user: User | null = await this.prismaService.user.findFirst({ where: params })
+
+      if(!user){
+        throw new BadRequestException(generateResponseMessage({message: `there is no user with data: ${params}`}))
+      }
 
       return user
 
@@ -81,39 +98,21 @@ export class UserService {
     }
   }
 
-  async changePassword(id: number, hash: string): Promise<string> {
+
+  async updateProperty(id: number, data: Partial<User>): Promise<User> {
     this.prismaService.onModuleInit()
 
     try {
-      const updateUser = await this.prismaService.user.update({
-        where: { id },
-        data: { hash }
-      })
-
-      return `user ${updateUser.login} was updated`
-
-    } catch (error) {
-      throw new HttpException(
-        'Failed to update user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    } finally {
-      this.prismaService.onModuleDestroy()
-    }
-
-  }
-
-  async updateProperty(id: number, data: Partial<User>): Promise<string> {
-    this.prismaService.onModuleInit()
-
-    try {
-      const updateUser = await this.prismaService.user.update({
+      const updatedUser: User | null = await this.prismaService.user.update({
         where: { id },
         data
       })
 
-      return `user ${updateUser.login} was updated`
+      if(!updatedUser){
+        throw new BadRequestException(generateResponseMessage({message: `there is no user with id: ${id}`}))
+      }
 
+      return updatedUser
     } catch (error) {
       console.log(error)
       throw new HttpException(
@@ -126,15 +125,21 @@ export class UserService {
 
   }
 
-  async remove(id: number): Promise<string> {
+  async remove(id: number): Promise<User> {
     this.prismaService.onModuleInit()
     try {
-      await this.prismaService.user.delete({
+      const deletedUser = await this.prismaService.user.delete({
         where: { id }
       })
-      return `user was deleted`
+
+      if(!deletedUser){
+        throw new BadRequestException(generateResponseMessage({message: `there is no user with id: ${id}`}))
+      }
+
+      return deletedUser
 
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         'Failed to delete the user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -144,22 +149,22 @@ export class UserService {
     }
   }
 
-  async saveVerificationKey(id: number, verificationkey: string, timestemp: string): Promise<boolean> {
+  async saveVerificationKey(id: number, verificationKey: string, timestamp: string): Promise<User> {
     this.prismaService.onModuleInit()
     try {
       const updateUser: User = await this.prismaService.user.update({
         where: { id },
         data: {
-          verification_key: verificationkey,
-          verification_timestemp: timestemp
+          verification_key: verificationKey,
+          verification_timestamp: timestamp
         }
       })
 
-      if (updateUser.verification_key === verificationkey && updateUser.verification_timestemp === timestemp) {
-        return true
-      } else {
-        return false
+      if(!updateUser) {
+        throw new BadRequestException(generateResponseMessage({message: `there is no user with id: ${id}`}))
       }
+
+      return updateUser
 
     } catch (error) {
       throw new HttpException(
@@ -172,29 +177,4 @@ export class UserService {
   }
 
 
-  async chageStatus(email: string, newStatus: Status): Promise<boolean> {
-    this.prismaService.onModuleInit()
-    try {
-      const updateUser: User = await this.prismaService.user.update({
-        where: { email },
-        data: {
-          status: newStatus
-        }
-      })
-
-      if (updateUser.status === newStatus) {
-        return true
-      } else {
-        return false
-      }
-
-    } catch (error) {
-      throw new HttpException(
-        'Failed to update the user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    } finally {
-      this.prismaService.onModuleDestroy()
-    }
-  }
 }

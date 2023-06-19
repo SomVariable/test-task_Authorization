@@ -7,6 +7,6 @@ import { PrismaService } from 'src/database/prisma.service';
   imports: [],
   controllers: [UserController],
   providers: [UserService, PrismaService],
-  exports: [UserService]
+  exports: [UserService ]
 })
 export class UserModule {}

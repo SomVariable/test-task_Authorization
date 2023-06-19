@@ -1,7 +1,10 @@
-import { AuthService } from './../auth/auth.service';
 import { MailerService } from '@nestjs-modules/mailer';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, BadRequestException } from '@nestjs/common';
 import { User } from '@prisma/client';
+import { SentMessageInfo } from 'nodemailer';
+import { VERIFY_KEY_TIMESTAMP } from 'src/verification/constants/consts';
+import { generateSendObject } from 'src/config/mailer.config';
+import { generateResponseMessage } from 'src/helpers/createResObject';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -11,21 +14,13 @@ export class VerificationService {
         private readonly userService: UserService
     ) { }
 
-    async sendVerificationCode(email: string, verificationCode: string): Promise<void> {
-        const subject = 'Email Verification';
-        const text = `Your verification code is: ${verificationCode}`;
+    async sendVerificationCode(email: string, verificationCode: string): Promise<SentMessageInfo | null> {
         try {
-            console.log('we are in the sendVerificationCode')
-            const user: User = await this.userService.findByEmail(email);
-            console.log(user)
-            this.userService.saveVerificationKey(user.id, verificationCode, Date.now().toString())
+            const user: User = await this.userService.findBy({email});
+            
+            await this.userService.saveVerificationKey(user.id, verificationCode, Date.now().toString())
 
-            await this.mailerService.sendMail({
-                to: email,
-                from: 'somevariable787898@gmail.com',
-                subject,
-                text,
-            });
+            return await this.mailerService.sendMail(generateSendObject(email, verificationCode));
         } catch (error) {
             console.log(error)
             throw new HttpException(
@@ -40,25 +35,17 @@ export class VerificationService {
         return Math.floor(100000 + Math.random() * 900000).toString()
     }
 
-    async validateVerifiCode(verifiCode: string, email: string): Promise<boolean> {
-        const user: User = await this.userService.findByEmail(email)
-        if (!user) {
-            return false;
+    async validateVerifyCode(verifyCode: string, email: string): Promise<boolean> {
+        const user: User = await this.userService.findBy({email})
+
+        if (+user.verification_timestamp + VERIFY_KEY_TIMESTAMP < Date.now()) {
+            throw new BadRequestException(generateResponseMessage({message: `Sorry, but you overstayed your verification key. Please reauthenticate`}))
         }
 
-
-        if (+user.verification_timestemp + 600000 < Date.now()) {
-            return false
+        if (user.verification_key !== verifyCode) {
+            throw new BadRequestException(generateResponseMessage({message: `Wrong verification key`}))
         }
-
-        if (user.verification_key !== verifiCode) {
-            return false
-        }
-
 
         return true
     }
-
-
-
 }

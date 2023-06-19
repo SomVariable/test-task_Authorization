@@ -6,17 +6,17 @@ import { UserService } from 'src/user/user.service';
 
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(private readonly userService: UserService, configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('SECRET_KEY'),
+      secretOrKey: configService.get<string>('REFRESH_SECRET_KEY'),
     });
   }
 
   async validate(payload: { id: number }) {
-    const user = await this.userService.findById(payload.id);
+    const user = await this.userService.findById( payload.id );
     if (!user) {
       throw new UnauthorizedException('You do not have access');
     }

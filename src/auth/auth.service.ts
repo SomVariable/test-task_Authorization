@@ -1,10 +1,11 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Prisma, Status, User } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt'
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { VerificationService } from 'src/verification/verification.service';
-import { Response } from 'express';
+import { SentMessageInfo } from 'nodemailer';
+import { generateResponseMessage } from 'src/helpers/createResObject';
 
 @Injectable()
 export class AuthService {
@@ -14,11 +15,11 @@ export class AuthService {
     private verificationService: VerificationService
   ) { }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user: User = await this.userService.findByEmail(email);
+  async validateUser(email: string, password: string): Promise<User> {
+    const user: User = await this.userService.findBy({ email });
 
     if (!user) {
-      return null
+      throw new BadRequestException(generateResponseMessage({ message: 'wrong email or password' }))
     }
     const isCompare: boolean = await bcrypt.compare(password, user.hash)
 
@@ -26,115 +27,76 @@ export class AuthService {
       return user
     }
 
-    return null;
+    throw new BadRequestException(generateResponseMessage({ message: 'wrong email or password' }));
   }
 
-  async singUp(data: Prisma.UserCreateInput, res: Response) {
-    console.log(data)
-    try {
-      const userData = await this.userService.create(data);
+  async singUp(data: Prisma.UserCreateInput): Promise<User> {
+    const userData: User = await this.userService.create(data);
+
+    if (userData) {
       const { email } = userData;
 
-      if (userData) {
-        this.sendVerificationKey(email, res)
-      } else {
-        return new UnauthorizedException('Invalid email or password')
-      }
-
-    } catch (error) {
-      throw new UnauthorizedException('RegistrationError')
+      this.sendVerificationKey(email)
+      return userData
     }
   }
 
-  async signIn({ email, password, res }: { email: string, password: string, res: Response }) {
-    const user = await this.validateUser(email, password)
+  async signIn({ email, password }: { email: string, password: string }) {
+    const user: User = await this.validateUser(email, password)
+
     if (user) {
-      this.sendVerificationKey(email, res)
-    } else {
-      return new UnauthorizedException('Invalid email or password')
-    }
+      this.sendVerificationKey(email)
+    } 
+
+    return user
   }
 
-  sendVerificationKey(email: string, res: Response) {
-    res.cookie('email', email)
-
-    const verifiCode = this.verificationService.generateVerificationCode()
-    this.verificationService.sendVerificationCode(email, verifiCode)
+  async sendVerificationKey(email: string): Promise<SentMessageInfo | null> {
+    const verifyCode = this.verificationService.generateVerificationCode()
+    return await this.verificationService.sendVerificationCode(email, verifyCode)
   }
 
-  async generateToken(email: string): Promise<string> {
-    const user: User = await this.userService.findByEmail(email)
-    const payload = { username: user.email, sub: user.id };
-    const jwt: string = this.jwtService.sign(payload)
+  async generateToken(email: string, options?: JwtSignOptions): Promise<string> {
+    const user: User = await this.userService.findBy({ email })
+    const payload = { username: user.email, sub: user.id, role: user.role };
+    const jwt: string = this.jwtService.sign(payload, options)
 
     return jwt
   }
 
-  async isVerified(verifiCode: string, email: string): Promise<boolean> {
-    const isVerified = await this.verificationService.validateVerifiCode(verifiCode, email);
-
-    return isVerified ? true : false
+  async isVerified(verifyCode: string, email: string): Promise<boolean> {
+    return await this.verificationService.validateVerifyCode(verifyCode, email);
   }
 
+  async activeUserStatus(email: string): Promise<User | null> {
+    const { id }: User = await this.userService.findBy({ email })
 
+    return await this.userService.updateProperty(id, { status: Status.active });
 
-  async activeUserStatus(email: string): Promise<string> {
-    const isUpdated = await this.userService.chageStatus(email, Status.active);
+  }
 
-    if (isUpdated) {
-      return "user status was changed"
+  async changeIsConfirmedChangePassword(email: string, state: boolean): Promise<User> {
+    const { id } = await this.userService.findBy({ email })
+    const newData: Partial<User> = {
+      isConfirmedChangePassword: state
+    }
+    return await this.userService.updateProperty(id, newData)
+
+  }
+
+  async submitNewPassword(email: string, hash: string): Promise<User | null> {
+    const user: User = await this.userService.findBy({ email });
+    const { id, isConfirmedChangePassword } = user
+    
+    if (isConfirmedChangePassword) {
+      const newData: Partial<User> = { hash }
+      await this.changeIsConfirmedChangePassword(email, false)
+      return await this.userService.updateProperty(id, newData)
     } else {
-      return "user status was'nt changed"
-    }
-  }
-
-  async blockUser(email: string): Promise<string> {
-    const isUpdated = await this.userService.chageStatus(email, Status.blocked);
-
-    if (isUpdated) {
-      return "user status was changed"
-    } else {
-      return "user status was'nt changed"
-    }
-  }
-
-  async sendVerifiKeyForChangePassword(email: string, res: Response): Promise<string> {
-    const user = this.userService.findByEmail(email)
-
-    if (user) {
-      this.sendVerificationKey(email, res)
-      return 'the code of verification was sended on your email'
-    } else {
-      return 'there is no such user'
-    }
-  }
-
-  async changeIsConfirmedChangePassword(email: string, state: boolean) {
-    const { id } = await this.userService.findByEmail(email)
-    if (state) {
-      const newData: Partial<User> = {
-        isConfirmedChangePassword: true
-      }
-      this.userService.updateProperty(id, newData)
-    } else {
-      const newData: Partial<User> = {
-        isConfirmedChangePassword: false
-      }
-      this.userService.updateProperty(id, newData)
-    }
-  }
-
-  async submitNewPassword(email: string, password: string) {
-    const user: User = await this.userService.findByEmail(email);
-    const {id, isConfirmedChangePassword} = user
-    if(isConfirmedChangePassword){
-      const newData : Partial<User> = {hash: password}
-      this.changeIsConfirmedChangePassword(email, false)
-      return  await this.userService.updateProperty(id, newData)
-    }else{
-      throw new UnauthorizedException('you are not verified')
+      throw new UnauthorizedException(generateResponseMessage({
+        message: 'You did not confirm the password change. Please check your email and enter the verification code'
+      }))
     }
 
   }
-
 }
