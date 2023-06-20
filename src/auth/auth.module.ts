@@ -11,7 +11,7 @@ import { VerificationModule } from 'src/verification/verification.module';
 import { AccessJwtStrategy } from './strategies/accessJwt.strategy';
 
 @Module({
-  imports: [JwtModule.register({}), UserModule, PassportModule, VerificationModule],
+  imports: [JwtModule.register({global: true}), UserModule, PassportModule, VerificationModule],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, AccessJwtStrategy, RefreshJwtStrategy],
   exports: [AuthService] 

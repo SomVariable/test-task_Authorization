@@ -2,16 +2,16 @@ import { Controller, Get, Post, Body, Param, UseGuards, Res, UsePipes, Headers }
 import { AuthService } from './auth.service';
 import { HashPasswordPipe } from 'src/user/pipes/hashPassword.pipe';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-
 import { AuthGuard } from '@nestjs/passport';
-import { PartialDtoValidationPipe } from 'src/user/pipes/partialDtoValidationPipe.pipe';
 import { User } from '@prisma/client';
 import { ResponseMessage, generateResponseMessage } from 'src/helpers/createResObject';
 import { AccessJwtConfig, RefreshJwtConfig } from 'src/config/jwt.config';
 import { AccessJwtAuthGuard } from './guards/accessJwt.guard';
 import { RefreshJwtAuthGuard } from './guards/refreshJwt.guard';
 import { SentMessageInfo } from 'nodemailer';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { SignInDto } from './dto/signIn.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags("auth")
 @Controller('auth')
@@ -34,9 +34,7 @@ export class AuthController {
 
   @Post('signIn')
   @UseGuards(AuthGuard('local'))
-  async signIn(
-    @Body('password') password: string,
-    @Body('email') email: string) {
+  async signIn(@Body() {email, password} : SignInDto) {
     const user: User = await this.authService.signIn({ password, email });
 
     if (user) {
@@ -48,22 +46,13 @@ export class AuthController {
   }
 
   @Post('changePassword')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        email: {
-          type: 'string',
-        },
-      },
-    },
-  })
-  async requestPasswordChange(
-    @Body('email') email: string) {
+  @ApiBearerAuth()
+  @UseGuards(AccessJwtAuthGuard)
+  async requestPasswordChange(@Headers('Authorization') authorization: string) {
+    const {email} = await this.authService.getDataFromJwt(authorization);
     const message: SentMessageInfo = await this.authService.sendVerificationKey(email);
 
     return generateResponseMessage({ message })
-
   }
 
   @Get('signIn/:verifyCode')
@@ -95,12 +84,24 @@ export class AuthController {
   }
 
   @Get('refreshToken')
+  @ApiBearerAuth()
   @UseGuards(RefreshJwtAuthGuard)
-  async refreshToken(@Headers('User-Email') email: string) {
-    return await this.authService.generateToken(email, RefreshJwtConfig)
+  async refreshToken(@Headers('Authorization') authorization: string) {
+    const {email} = await this.authService.getDataFromJwt(authorization, RefreshJwtConfig);
+    const newAccessToken: string = await this.authService.generateToken(email, AccessJwtConfig)
+    const newRefreshToken: string = await this.authService.generateToken(email, RefreshJwtConfig)
+    return generateResponseMessage({
+      message: `tokens was refresh`,
+      data: {
+        newAccessToken, 
+        newRefreshToken
+      }
+    })
   }
 
   @Get('changePassword/:verifyCode')
+  @ApiBearerAuth()
+  @UseGuards(AccessJwtAuthGuard)
   async verifyPasswordChangeKey(
     @Param('verifyCode') verifyCode: string,
     @Headers('User-Email') email: string) {
@@ -113,22 +114,13 @@ export class AuthController {
   }
 
   @Post("changePassword/submitNewPassword")
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        password: {
-          type: 'string',
-        },
-      },
-    },
-  })
-  
-  @UsePipes(new PartialDtoValidationPipe('password'))
+  @ApiBearerAuth()
+  @UseGuards(AccessJwtAuthGuard)
   async submitNewPassword(
-    @Body(new HashPasswordPipe()) {password}: Partial<CreateUserDto>,
-    @Headers('User-Email') email: string) {
-    const updatedUser: User = await this.authService.submitNewPassword(email, password as string)
+    @Body(new HashPasswordPipe()) {password}: ResetPasswordDto,
+    @Headers('Authorization') authorization: string) {
+    const {email} = await this.authService.getDataFromJwt(authorization)
+    const updatedUser: User = await this.authService.submitNewPassword(email, password)
 
     if (updatedUser) {
       return generateResponseMessage({

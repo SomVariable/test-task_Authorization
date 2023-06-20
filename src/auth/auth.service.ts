@@ -6,6 +6,7 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { VerificationService } from 'src/verification/verification.service';
 import { SentMessageInfo } from 'nodemailer';
 import { generateResponseMessage } from 'src/helpers/createResObject';
+import { AccessJwtConfig } from 'src/config/jwt.config';
 
 @Injectable()
 export class AuthService {
@@ -58,7 +59,7 @@ export class AuthService {
 
   async generateToken(email: string, options?: JwtSignOptions): Promise<string> {
     const user: User = await this.userService.findBy({ email })
-    const payload = { username: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, role: user.role };
     const jwt: string = this.jwtService.sign(payload, options)
 
     return jwt
@@ -70,9 +71,14 @@ export class AuthService {
 
   async activeUserStatus(email: string): Promise<User | null> {
     const { id }: User = await this.userService.findBy({ email })
-
     return await this.userService.updateProperty(id, { status: Status.active });
+  }
 
+  async getDataFromJwt(authorization: string, option: JwtSignOptions = AccessJwtConfig){
+    const token = authorization?.replace('Bearer ', '');
+    const dataFromToken = await this.jwtService.verify(token, option)
+    console.log(dataFromToken)
+    return dataFromToken ;
   }
 
   async changeIsConfirmedChangePassword(email: string, state: boolean): Promise<User> {
@@ -81,7 +87,6 @@ export class AuthService {
       isConfirmedChangePassword: state
     }
     return await this.userService.updateProperty(id, newData)
-
   }
 
   async submitNewPassword(email: string, hash: string): Promise<User | null> {

@@ -8,7 +8,6 @@ import { CreateUserDto } from '../dto/create-user.dto';
 export class PartialDtoValidationPipe implements PipeTransform<any> {
   constructor(private readonly property: string ){}
   async transform(value: any, metadata: ArgumentMetadata) {
-    console.log('PartialDtoValidationPipe')
     if (metadata.type !== 'body') {
       return value;
     }

@@ -3,6 +3,7 @@ import { Prisma, Status, User, Roles } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../database/prisma.service';
 import { generateResponseMessage } from '../helpers/createResObject';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -99,7 +100,7 @@ export class UserService {
   }
 
 
-  async updateProperty(id: number, data: Partial<User>): Promise<User> {
+  async updateProperty(id: number, data: UpdateUserDto): Promise<User> {
     this.prismaService.onModuleInit()
 
     try {

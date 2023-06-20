@@ -69,10 +69,6 @@ export class UserController {
   }
 
   @Get()
-  @ApiHeader({
-    name: 'role',
-    enum: ['user', 'admin'],
-  })
   @RolesDecorator(Roles.admin)
   async findAll() {
     const users: User[] = await this.userService.findAll();
