@@ -22,7 +22,6 @@ export class VerificationService {
 
             return await this.mailerService.sendMail(generateSendObject(email, verificationCode));
         } catch (error) {
-            console.log(error)
             throw new HttpException(
                 'Failed to create user',
                 HttpStatus.INTERNAL_SERVER_ERROR,

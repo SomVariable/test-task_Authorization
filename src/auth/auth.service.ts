@@ -77,7 +77,7 @@ export class AuthService {
   async getDataFromJwt(authorization: string, option: JwtSignOptions = AccessJwtConfig){
     const token = authorization?.replace('Bearer ', '');
     const dataFromToken = await this.jwtService.verify(token, option)
-    console.log(dataFromToken)
+
     return dataFromToken ;
   }
 

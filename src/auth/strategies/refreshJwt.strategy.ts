@@ -3,6 +3,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
+import { jwtType } from '../types/auth.types';
 
 
 @Injectable()
@@ -15,14 +16,12 @@ export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     });
   }
 
-  async validate(payload: { id: number }) {
-    const user = await this.userService.findById( payload.id );
+  async validate(payload: jwtType) {
+    const user = await this.userService.findBy( {email: payload.email} );
     if (!user) {
       throw new UnauthorizedException('You do not have access');
     }
 
-    return {
-      id: user.id,
-    };
+    return payload;
   }
 }

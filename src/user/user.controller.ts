@@ -12,6 +12,7 @@ import { ApiBearerAuth, ApiBody, ApiHeader, ApiQuery, ApiTags } from '@nestjs/sw
 @ApiTags("users")
 @ApiBearerAuth()
 @Controller('user')
+@RolesDecorator(Roles.admin)
 @UseGuards(AccessJwtAuthGuard, RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) { }
@@ -69,7 +70,6 @@ export class UserController {
   }
 
   @Get()
-  @RolesDecorator(Roles.admin)
   async findAll() {
     const users: User[] = await this.userService.findAll();
 
@@ -88,8 +88,7 @@ export class UserController {
 
   @Get('getUserById/:id')
   async findById(@Param('id') id: string) {
-    const user: User = await this.userService.findById(+id);
-
+    const user: User = await this.userService.findBy({ id: +id});
 
     if (user) {
       const { email, login, isConfirmedChangePassword, role, status } = user
@@ -123,6 +122,7 @@ export class UserController {
 
   @Get('getUserByLogin/:login')
   @UseGuards(AccessJwtAuthGuard)
+  @RolesDecorator(Roles.user)
   async findByLogin(@Param('login') login: string) {
     const user: User = await this.userService.findBy({login});
 
