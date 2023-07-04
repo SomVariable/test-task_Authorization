@@ -1,13 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Inject, forwardRef } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { HashPasswordPipe } from './pipes/hashPassword.pipe';
-import { AccessJwtAuthGuard } from 'src/auth/guards/accessJwt.guard';
+import { CreateUserDto } from '../auth/dto/create-user.dto';
+import { AccessJwtAuthGuard } from 'src/auth/guards/access-jwt.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles, Status, User } from '@prisma/client';
 import { RolesDecorator } from 'src/roles/roles.decorator';
-import { generateResponseMessage } from 'src/helpers/createResObject';
+import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { ApiBearerAuth, ApiBody, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { AuthService } from 'src/auth/auth.service';
 
 @ApiTags("users")
 @ApiBearerAuth()
@@ -15,59 +15,10 @@ import { ApiBearerAuth, ApiBody, ApiHeader, ApiQuery, ApiTags } from '@nestjs/sw
 @RolesDecorator(Roles.admin)
 @UseGuards(AccessJwtAuthGuard, RolesGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(
+    private readonly userService: UserService
+    ) { }
 
-  @Post('createUser')
-  async createUser(
-    @Body('password', new HashPasswordPipe()) hash: string,
-    @Body() { email, login }: CreateUserDto) {
-    const user: User | string[] | null = await this.userService.create({ email, login, hash })
-
-    if (user) {
-      return generateResponseMessage({
-        message: `user with email ${email} was created`,
-        data: { email, login }
-      })
-    } else {
-      return generateResponseMessage({
-        message: "user wasn't created"
-      })
-    }
-  }
-
-  @Post('createUsers')
-  async createUsers(
-    @Body('users', HashPasswordPipe) users: CreateUserDto[]) {
-    let createdUsers: User[] = []
-    let failedUsers: CreateUserDto[] = []
-    let duplicateUsers: object[] = []
-
-    if (users.length !== 0) {
-      users.forEach(async (user: CreateUserDto) => {
-        const newUser: User | null | string[] = await this.userService.create({ email: user.email, login: user.login, hash: user.password })
-        
-        if (Array.isArray(newUser)) {
-          duplicateUsers = [...duplicateUsers, { email: user.email, duplicateProperty: newUser}]
-          return null
-        }
-
-        if (newUser) {
-          createdUsers = [...createdUsers, newUser]
-        } else {
-          failedUsers = [...failedUsers, user]
-        }
-      })
-
-      return generateResponseMessage({
-        message: `count users that was created: ${createdUsers.length}. count users that wasn't created: ${failedUsers.length}, duplicate users count: ${duplicateUsers.length}`,
-        data: {
-          createdUsers,
-          failedUsers,
-          duplicateUsers
-        }
-      })
-    }
-  }
 
   @Get()
   async findAll() {
@@ -86,9 +37,9 @@ export class UserController {
 
   }
 
-  @Get('getUserById/:id')
-  async findById(@Param('id') id: string) {
-    const user: User = await this.userService.findBy({ id: +id});
+  @Get(':id')
+  async findById(@Param('id', ParseIntPipe) id: number) {
+    const user: User = await this.userService.findById( id );
 
     if (user) {
       const { email, login, isConfirmedChangePassword, role, status } = user
@@ -103,24 +54,7 @@ export class UserController {
     }
   }
 
-  @Get('getUserByEmail/:email')
-  async findByEmail(@Param('email') email: string) {
-    const user: User = await this.userService.findBy({email});
-
-    if (user) {
-      const { email, login, isConfirmedChangePassword, role, status } = user
-
-      return generateResponseMessage({
-        data: { email, login, isConfirmedChangePassword, role, status }
-      })
-    } else {
-      return generateResponseMessage({
-        message: `user with email ${email} wasn't found`
-      })
-    }
-  }
-
-  @Get('getUserByLogin/:login')
+  @Get(':login')
   @UseGuards(AccessJwtAuthGuard)
   @RolesDecorator(Roles.user)
   async findByLogin(@Param('login') login: string) {
@@ -140,8 +74,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    const deletedUser: User | null = await this.userService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const deletedUser: User | null = await this.userService.remove(id);
 
     if (deletedUser) {
       const { email } = deletedUser
@@ -156,9 +90,9 @@ export class UserController {
     }
   }
 
-  @Patch('block/:id')
-  async blockUser(@Param('id') id: string) {
-    const blockedUser: User | null = await this.userService.updateProperty(+id, { status: Status.blocked });
+  @Patch(':id')
+  async blockUser(@Param('id', ParseIntPipe) id: number) {
+    const blockedUser: User | null = await this.userService.updateProperty(id, { status: Status.blocked });
 
     if (blockedUser) {
       const { email } = blockedUser

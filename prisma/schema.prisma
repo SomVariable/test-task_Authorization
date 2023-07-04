@@ -12,20 +12,20 @@ model User {
   email                     String  @unique
   login                     String  @unique
   hash                      String
-  verification_key          String? @default("")
-  verification_timestamp    String? @default("")
-  role                      Roles   @default(user)
-  status                    Status  @default(pending)
+  verification_key          String 
+  verification_timestamp    String 
+  role                      Roles   @default(USER)
+  status                    Status  @default(PENDING)
   isConfirmedChangePassword Boolean @default(false)
 }
 
 enum Roles {
-  admin
-  user
+  ADMIN
+  USER
 }
 
 enum Status {
-  pending
-  active
-  blocked
+  PENDING
+  ACTIVE
+  BLOCKED
 }

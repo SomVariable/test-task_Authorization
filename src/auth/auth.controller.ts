@@ -1,28 +1,27 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Res, UsePipes, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Res, UsePipes, Headers, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { HashPasswordPipe } from 'src/user/pipes/hashPassword.pipe';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { User } from '@prisma/client';
-import { ResponseMessage, generateResponseMessage } from 'src/helpers/createResObject';
+import { ResponseMessage, generateResponseMessage } from 'src/helpers/create-res-object';
 import { AccessJwtConfig, RefreshJwtConfig } from 'src/config/jwt.config';
-import { AccessJwtAuthGuard } from './guards/accessJwt.guard';
-import { RefreshJwtAuthGuard } from './guards/refreshJwt.guard';
+import { AccessJwtAuthGuard } from './guards/access-jwt.guard';
+import { RefreshJwtAuthGuard } from './guards/refresh-jwt.guard';
 import { SentMessageInfo } from 'nodemailer';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
-import { SignInDto } from './dto/signIn.dto';
+import { SignInDto } from './dto/sign-in.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyUser } from './dto/verify-user.dto';
 
 @ApiTags("auth")
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @Post('signUp')
+  @Post('sign-up')
   async signUp(
-    @Body('password', new HashPasswordPipe()) hash: string,
-    @Body() { email, login }: CreateUserDto) {
-
+    @Body() { email, login, password }: CreateUserDto) {
+    const hash: string = await this.authService.hashPassword(password)
     const user: User = await this.authService.singUp({ hash, email, login });
 
     if (user) {
@@ -32,7 +31,7 @@ export class AuthController {
     }
   }
 
-  @Post('signIn')
+  @Post('sign-in')
   @UseGuards(AuthGuard('local'))
   async signIn(@Body() {email, password} : SignInDto) {
     const user: User = await this.authService.signIn({ password, email });
@@ -45,7 +44,7 @@ export class AuthController {
 
   }
 
-  @Post('changePassword')
+  @Post('reset-password')
   @ApiBearerAuth()
   @UseGuards(AccessJwtAuthGuard)
   async requestPasswordChange(@Headers('Authorization') authorization: string) {
@@ -55,10 +54,9 @@ export class AuthController {
     return generateResponseMessage({ message })
   }
 
-  @Get('signIn/:verifyCode')
+  @Post('sign-in/verify')
   async login(
-    @Param('verifyCode') verifyCode: string,
-    @Headers('User-Email') email: string): Promise<ResponseMessage> {
+    @Body() {email, verifyCode}: VerifyUser): Promise<ResponseMessage> {
     await this.authService.isVerified(verifyCode, email)
     const accessToken = this.authService.generateToken(email, AccessJwtConfig)
     const refreshToken = this.authService.generateToken(email, RefreshJwtConfig)
@@ -66,10 +64,9 @@ export class AuthController {
     
   }
 
-  @Get('signUp/:verifyCode')
+  @Get('sign-up/verify')
   async registerWithConfirmation(
-    @Param('verifyCode') verifyCode: string,
-    @Headers('User-Email') email: string): Promise<ResponseMessage> {
+    @Body() {email, verifyCode}: VerifyUser): Promise<ResponseMessage> {
     await this.authService.isVerified(verifyCode, email)
 
     const accessToken: string = await this.authService.generateToken(email, AccessJwtConfig)
@@ -83,7 +80,7 @@ export class AuthController {
     })
   }
 
-  @Get('refreshToken')
+  @Get('refresh-token')
   @ApiBearerAuth()
   @UseGuards(RefreshJwtAuthGuard)
   async refreshToken(@Headers('Authorization') authorization: string) {
@@ -99,28 +96,27 @@ export class AuthController {
     })
   }
 
-  @Get('changePassword/:verifyCode')
+  @Post('reset-password/verify')
   @ApiBearerAuth()
   @UseGuards(AccessJwtAuthGuard)
   async verifyPasswordChangeKey(
-    @Param('verifyCode') verifyCode: string,
-    @Headers('User-Email') email: string) {
+    @Body() {email, verifyCode}: VerifyUser) {
     await this.authService.isVerified(verifyCode, email)
     await this.authService.changeIsConfirmedChangePassword(email, true)
     return generateResponseMessage({
       message: `now you can change the password`
     })
-    
   }
 
-  @Post("changePassword/submitNewPassword")
+  @Patch("reset-password")
   @ApiBearerAuth()
   @UseGuards(AccessJwtAuthGuard)
   async submitNewPassword(
-    @Body(new HashPasswordPipe()) {password}: ResetPasswordDto,
+    @Body() {password}: ResetPasswordDto,
     @Headers('Authorization') authorization: string) {
+    const hash: string = await this.authService.hashPassword(password)
     const {email} = await this.authService.getDataFromJwt(authorization)
-    const updatedUser: User = await this.authService.submitNewPassword(email, password)
+    const updatedUser: User = await this.authService.submitNewPassword(email, hash)
 
     if (updatedUser) {
       return generateResponseMessage({

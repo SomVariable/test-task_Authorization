@@ -5,8 +5,9 @@ import * as bcrypt from 'bcrypt'
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { VerificationService } from 'src/verification/verification.service';
 import { SentMessageInfo } from 'nodemailer';
-import { generateResponseMessage } from 'src/helpers/createResObject';
+import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { AccessJwtConfig } from 'src/config/jwt.config';
+import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -83,7 +84,7 @@ export class AuthService {
 
   async changeIsConfirmedChangePassword(email: string, state: boolean): Promise<User> {
     const { id } = await this.userService.findBy({ email })
-    const newData: Partial<User> = {
+    const newData: UpdateUserDto = {
       isConfirmedChangePassword: state
     }
     return await this.userService.updateProperty(id, newData)
@@ -94,7 +95,7 @@ export class AuthService {
     const { id, isConfirmedChangePassword } = user
     
     if (isConfirmedChangePassword) {
-      const newData: Partial<User> = { hash }
+      const newData: UpdateUserDto = { hash }
       await this.changeIsConfirmedChangePassword(email, false)
       return await this.userService.updateProperty(id, newData)
     } else {
@@ -102,6 +103,15 @@ export class AuthService {
         message: 'You did not confirm the password change. Please check your email and enter the verification code'
       }))
     }
+  }
 
+  async hashPassword(password) {
+    try {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      return hashedPassword;
+    } catch (error) {
+      throw new Error('Error by hashing');
+    }
   }
 }

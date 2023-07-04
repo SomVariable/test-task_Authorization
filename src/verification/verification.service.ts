@@ -4,7 +4,7 @@ import { User } from '@prisma/client';
 import { SentMessageInfo } from 'nodemailer';
 import { VERIFY_KEY_TIMESTAMP } from 'src/verification/constants/consts';
 import { generateSendObject } from 'src/config/mailer.config';
-import { generateResponseMessage } from 'src/helpers/createResObject';
+import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()

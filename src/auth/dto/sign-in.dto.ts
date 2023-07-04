@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { StrongPassword } from '../decorators/strong-password.decorator';
 export class SignInDto {
     @ApiProperty()
     @IsEmail()
@@ -13,9 +14,6 @@ export class SignInDto {
     @IsString()
     @MinLength(8)
     @MaxLength(30)
-    @Matches(
-        /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/,
-        { message: 'password too weak' },
-    )
+    @StrongPassword()
     password: string;
 }

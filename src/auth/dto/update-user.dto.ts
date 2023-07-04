@@ -1,9 +1,11 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength } from "class-validator";
 import { CreateUserDto } from "./create-user.dto";
 import { Roles, Status, User } from "@prisma/client";
 import { ApiProperty } from "@nestjs/swagger";
+import { PartialType } from "@nestjs/swagger"; 
 
-export class UpdateUserDto implements Partial<User>{
+
+export class UpdateUserDto extends PartialType(CreateUserDto) {
     @ApiProperty()
     @IsOptional()
     @IsEmail()
