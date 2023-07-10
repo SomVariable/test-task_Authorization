@@ -4,7 +4,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { PrismaClientExceptionFilter } from 'nestjs-prisma';
-import { redisConfig } from './config/redis.config';
 
 
 async function bootstrap() {
