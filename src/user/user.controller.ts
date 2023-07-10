@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Inject, forwardRef } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Inject, forwardRef, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AccessJwtAuthGuard } from 'src/auth/guards/access-jwt.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -6,6 +6,7 @@ import { Roles, Status, User } from '@prisma/client';
 import { RolesDecorator } from 'src/roles/roles.decorator';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { DeviceType } from 'src/decorators/device-type.decorator';
 
 @ApiTags("users")
 @ApiBearerAuth()

@@ -9,6 +9,7 @@ import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { AccessJwtConfig } from 'src/config/jwt.config';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
 import { KvStoreService } from 'src/kv-store/kv-store.service';
+import { generateSessionKey } from 'src/helpers/create-session-key';
 
 @Injectable()
 export class AuthService {
@@ -35,42 +36,42 @@ export class AuthService {
     throw new BadRequestException(generateResponseMessage({ message: 'wrong email or password' }));
   }
 
-  async singUp(data: Prisma.UserCreateInput): Promise<User> {
+  async singUp(data: Prisma.UserCreateInput, deviceType: string): Promise<User> {
     const userData: User = await this.userService.create(data);
     const { email, id } = userData;
+    const sessionKey: string = generateSessionKey(String(id), deviceType)
 
-    this.kvStoreService.createSession({id: String(id)})
-
-    this.sendVerificationKey(email)
+    await this.kvStoreService.createSession({id: sessionKey})
+    await this.sendVerificationKey(email, sessionKey)
     return userData
     
   }
 
-  async signIn({ email, password }: { email: string, password: string }) {
+  async signIn({ email, password }: { email: string, password: string }, deviceType: string) {
     const user: User = await this.validateUser(email, password)
+    const sessionKey: string = generateSessionKey(String(user.id), deviceType)
 
-    if (user) {
-      this.sendVerificationKey(email)
-    } 
-
+    this.kvStoreService.activeSession({id: sessionKey})
+    this.sendVerificationKey(email, sessionKey)
+    
     return user
   }
 
-  async sendVerificationKey(email: string): Promise<SentMessageInfo | null> {
+  async sendVerificationKey(email: string, sessionKey: string): Promise<SentMessageInfo | null> {
     const verifyCode = this.verificationService.generateVerificationCode()
-    return await this.verificationService.sendVerificationCode(email, verifyCode)
+    return await this.verificationService.sendVerificationCode(email, sessionKey, verifyCode)
   }
 
-  async generateToken(email: string, options?: JwtSignOptions): Promise<string> {
+  async generateToken(email: string, sessionKey: string,  options?: JwtSignOptions): Promise<string> {
     const user: User = await this.userService.findBy({ email })
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, role: user.role, sessionKey };
     const jwt: string = this.jwtService.sign(payload, options)
 
     return jwt
   }
 
-  async isVerified(verifyCode: string, email: string): Promise<boolean> {
-    return await this.verificationService.validateVerifyCode(verifyCode, email);
+  async isVerified(verifyCode: string, sessionKey: string): Promise<boolean> {
+    return await this.verificationService.validateVerifyCode(verifyCode, sessionKey);
   }
 
   async activeUserStatus(email: string): Promise<User | null> {
@@ -116,5 +117,9 @@ export class AuthService {
     } catch (error) {
       throw new Error('Error by hashing');
     }
+  }
+
+  async logout(sessionKey: string): Promise<void> {
+    await this.kvStoreService.blockSession({id: sessionKey})
   }
 }

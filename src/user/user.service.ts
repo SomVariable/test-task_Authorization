@@ -65,16 +65,4 @@ export class UserService {
     return deletedUser
   }
 
-  async saveVerificationKey(id: number, verificationKey: string, timestamp: string): Promise<User> {
-    const updateUser: User = await this.prismaService.user.update({
-        where: { id },
-        data: {
-          verification_key: verificationKey,
-          verification_timestamp: timestamp
-        }
-      })
-
-    return updateUser
-  }
-
 }

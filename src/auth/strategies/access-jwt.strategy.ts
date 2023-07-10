@@ -2,7 +2,7 @@ import { KvStoreService } from 'src/kv-store/kv-store.service';
 import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { jwtType } from '../types/auth.types';
 import { User } from '@prisma/client';
@@ -26,11 +26,15 @@ export class AccessJwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: jwtType) {
-    const user: User = await this.userService.findBy( {email: payload.email} );
-    const session: Session = await this.KvStoreService.getSession({id: String(user.id)})
+  async validate(payload: jwtType ) {
+    const user: User = await this.userService.findBy({email: payload.email})
+    const session: Session = await this.KvStoreService.getSession({id: payload.sessionKey})
     const sessionJwtBody: jwtType = this.jwtService.verify(session.jwtToken, {secret: this.configService.get<string>('ACCESS_SECRET_KEY')}) 
     
+    if(session.status === 'BLOCKED'){
+      throw new BadRequestException('session is blocked')
+    }
+
     if(!isEqual(sessionJwtBody, payload)){
       throw new UnauthorizedException('wrong token');
     }

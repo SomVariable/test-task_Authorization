@@ -17,19 +17,19 @@ export class VerificationService {
         private readonly kvStoreService: KvStoreService
     ) { }
 
-    async sendVerificationCode(email: string, verificationKey: string): Promise<SentMessageInfo | null> {
+    async sendVerificationCode(email: string, sessionKey: string, verificationKey: string): Promise<SentMessageInfo | null> {
         try {
-            const user: User = await this.userService.findBy({email});
             const data: SetVerificationProps = {
-                id: String(user.id), 
+                id: sessionKey, 
                 verificationKey, 
                 verificationTimestamp: Date.now().toString()
             }
-            console.log(data)
+
             await this.kvStoreService.setVerificationProps(data)
 
             return await this.mailerService.sendMail(generateSendObject(email, verificationKey));
         } catch (error) {
+            console.log(error)
             throw new HttpException(
                 'Failed to create user',
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -42,9 +42,8 @@ export class VerificationService {
         return Math.floor(100000 + Math.random() * 900000).toString()
     }
 
-    async validateVerifyCode(verifyCode: string, email: string): Promise<boolean> {
-        const user: User = await this.userService.findBy({email})
-        const session: Session = await this.kvStoreService.getSession({id: String(user.id)})
+    async validateVerifyCode(verifyCode: string, sessionKey: string): Promise<boolean> {
+        const session: Session = await this.kvStoreService.getSession({id: sessionKey})
 
         if (parseInt(session.verificationTimestamp) + VERIFY_KEY_TIMESTAMP < Date.now()) {
             throw new BadRequestException(generateResponseMessage({message: `Sorry, but you overstayed your verification key. Please reauthenticate`}))
