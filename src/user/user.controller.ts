@@ -1,24 +1,21 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, Inject, forwardRef } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from '../auth/dto/create-user.dto';
 import { AccessJwtAuthGuard } from 'src/auth/guards/access-jwt.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles, Status, User } from '@prisma/client';
 import { RolesDecorator } from 'src/roles/roles.decorator';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
-import { ApiBearerAuth, ApiBody, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AuthService } from 'src/auth/auth.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags("users")
 @ApiBearerAuth()
 @Controller('user')
-@RolesDecorator(Roles.admin)
+@RolesDecorator(Roles.ADMIN)
 @UseGuards(AccessJwtAuthGuard, RolesGuard)
 export class UserController {
   constructor(
     private readonly userService: UserService
     ) { }
-
 
   @Get()
   async findAll() {
@@ -55,8 +52,7 @@ export class UserController {
   }
 
   @Get(':login')
-  @UseGuards(AccessJwtAuthGuard)
-  @RolesDecorator(Roles.user)
+  @RolesDecorator(Roles.USER)
   async findByLogin(@Param('login') login: string) {
     const user: User = await this.userService.findBy({login});
 
@@ -92,7 +88,7 @@ export class UserController {
 
   @Patch(':id')
   async blockUser(@Param('id', ParseIntPipe) id: number) {
-    const blockedUser: User | null = await this.userService.updateProperty(id, { status: Status.blocked });
+    const blockedUser: User | null = await this.userService.updateProperty(id, { status: Status.BLOCKED });
 
     if (blockedUser) {
       const { email } = blockedUser
@@ -106,4 +102,6 @@ export class UserController {
       })
     }
   }
+
+  
 }

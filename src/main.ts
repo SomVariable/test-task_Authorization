@@ -4,6 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { PrismaClientExceptionFilter } from 'nestjs-prisma';
+import { redisConfig } from './config/redis.config';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +13,7 @@ async function bootstrap() {
 
   app.enableCors({ credentials: true, origin: true });
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter))
-  app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true, forbidNonWhitelisted: true}));
+  app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
   app.use(cookieParser());
 
   const config = new DocumentBuilder()

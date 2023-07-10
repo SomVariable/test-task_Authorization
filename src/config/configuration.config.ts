@@ -16,6 +16,8 @@ export default () => ({
     MAILGUN_PORT: process.env.MAILGUN_PORT,
     MAILGUN_USER: process.env.MAILGUN_USER,
     MAILGUN_PASS: process.env.MAILGUN_PASS,
+
+    REDIS_URL: process.env.REDIS_URL
   });
 
 

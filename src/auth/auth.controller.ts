@@ -1,3 +1,4 @@
+import { UserService } from 'src/user/user.service';
 import { Controller, Get, Post, Body, Param, UseGuards, Res, UsePipes, Headers, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
@@ -12,18 +13,21 @@ import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { SignInDto } from './dto/sign-in.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyUser } from './dto/verify-user.dto';
+import { KvStoreService } from 'src/kv-store/kv-store.service';
 
 @ApiTags("auth")
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService, 
+    private kvStoreService: KvStoreService,
+    private userService: UserService) { }
 
   @Post('sign-up')
   async signUp(
     @Body() { email, login, password }: CreateUserDto) {
     const hash: string = await this.authService.hashPassword(password)
-    const user: User = await this.authService.singUp({ hash, email, login });
-
+    const user: User = await this.authService.singUp({ email, login, hash});
     if (user) {
       return generateResponseMessage({ message: `User with email ${email} was created, please verify your account` })
     } else {
@@ -34,8 +38,8 @@ export class AuthController {
   @Post('sign-in')
   @UseGuards(AuthGuard('local'))
   async signIn(@Body() {email, password} : SignInDto) {
+    const hash: string = await this.authService.hashPassword(password)
     const user: User = await this.authService.signIn({ password, email });
-
     if (user) {
       return generateResponseMessage({ message: `A verification code was sent to your email` })
     } else {
@@ -58,25 +62,28 @@ export class AuthController {
   async login(
     @Body() {email, verifyCode}: VerifyUser): Promise<ResponseMessage> {
     await this.authService.isVerified(verifyCode, email)
-    const accessToken = this.authService.generateToken(email, AccessJwtConfig)
-    const refreshToken = this.authService.generateToken(email, RefreshJwtConfig)
+    const accessToken: string = await this.authService.generateToken(email, AccessJwtConfig)
+    const refreshToken: string = await this.authService.generateToken(email, RefreshJwtConfig)
+
     return generateResponseMessage({data: {accessToken, refreshToken}})
     
   }
 
-  @Get('sign-up/verify')
+  @Post('sign-up/verify')
   async registerWithConfirmation(
     @Body() {email, verifyCode}: VerifyUser): Promise<ResponseMessage> {
     await this.authService.isVerified(verifyCode, email)
-
-    const accessToken: string = await this.authService.generateToken(email, AccessJwtConfig)
-    const secretToken: string = await this.authService.generateToken(email, RefreshJwtConfig)
+    const {id} : User = await this.userService.findBy({email})
+    const jwtToken: string = await this.authService.generateToken(email, AccessJwtConfig)
+    const refreshToken: string = await this.authService.generateToken(email, RefreshJwtConfig)
       
+    this.kvStoreService.setJwtProps({id: String(id), jwtToken, refreshToken})
+
     await this.authService.activeUserStatus(email)
 
     return generateResponseMessage({
       message: "user was created",
-      data: { accessToken, secretToken }
+      data: { jwtToken, refreshToken }
     })
   }
 
@@ -84,9 +91,12 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(RefreshJwtAuthGuard)
   async refreshToken(@Headers('Authorization') authorization: string) {
-    const {email} = await this.authService.getDataFromJwt(authorization, RefreshJwtConfig);
+    const {id, email} = await this.authService.getDataFromJwt(authorization, RefreshJwtConfig);
     const newAccessToken: string = await this.authService.generateToken(email, AccessJwtConfig)
     const newRefreshToken: string = await this.authService.generateToken(email, RefreshJwtConfig)
+
+    this.kvStoreService.setJwtProps({id: String(id), jwtToken: newAccessToken, refreshToken: newRefreshToken})
+    
     return generateResponseMessage({
       message: `tokens was refresh`,
       data: {

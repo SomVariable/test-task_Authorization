@@ -6,21 +6,29 @@ import { VERIFY_KEY_TIMESTAMP } from 'src/verification/constants/consts';
 import { generateSendObject } from 'src/config/mailer.config';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { UserService } from 'src/user/user.service';
+import { KvStoreService } from 'src/kv-store/kv-store.service';
+import { Session, SetVerificationProps } from 'kv-types';
 
 @Injectable()
 export class VerificationService {
     constructor(
         private readonly mailerService: MailerService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly kvStoreService: KvStoreService
     ) { }
 
-    async sendVerificationCode(email: string, verificationCode: string): Promise<SentMessageInfo | null> {
+    async sendVerificationCode(email: string, verificationKey: string): Promise<SentMessageInfo | null> {
         try {
             const user: User = await this.userService.findBy({email});
-            
-            await this.userService.saveVerificationKey(user.id, verificationCode, Date.now().toString())
+            const data: SetVerificationProps = {
+                id: String(user.id), 
+                verificationKey, 
+                verificationTimestamp: Date.now().toString()
+            }
+            console.log(data)
+            await this.kvStoreService.setVerificationProps(data)
 
-            return await this.mailerService.sendMail(generateSendObject(email, verificationCode));
+            return await this.mailerService.sendMail(generateSendObject(email, verificationKey));
         } catch (error) {
             throw new HttpException(
                 'Failed to create user',
@@ -36,12 +44,13 @@ export class VerificationService {
 
     async validateVerifyCode(verifyCode: string, email: string): Promise<boolean> {
         const user: User = await this.userService.findBy({email})
+        const session: Session = await this.kvStoreService.getSession({id: String(user.id)})
 
-        if (+user.verification_timestamp + VERIFY_KEY_TIMESTAMP < Date.now()) {
+        if (parseInt(session.verificationTimestamp) + VERIFY_KEY_TIMESTAMP < Date.now()) {
             throw new BadRequestException(generateResponseMessage({message: `Sorry, but you overstayed your verification key. Please reauthenticate`}))
         }
 
-        if (user.verification_key !== verifyCode) {
+        if (session.verificationKey !== verifyCode) {
             throw new BadRequestException(generateResponseMessage({message: `Wrong verification key`}))
         }
 

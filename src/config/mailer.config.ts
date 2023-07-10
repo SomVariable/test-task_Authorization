@@ -4,7 +4,7 @@ import appConfig from './configuration.config';
 export const mailerConfig: MailerOptions = {
     transport: {
         host: appConfig().MAILGUN_HOST,
-        port: +appConfig().MAILGUN_PORT,
+        port: parseInt(appConfig().MAILGUN_PORT),
         auth: {
           user: appConfig().MAILGUN_USER,
           pass: appConfig().MAILGUN_PASS

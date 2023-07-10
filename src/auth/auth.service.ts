@@ -8,13 +8,15 @@ import { SentMessageInfo } from 'nodemailer';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { AccessJwtConfig } from 'src/config/jwt.config';
 import { UpdateUserDto } from 'src/auth/dto/update-user.dto';
+import { KvStoreService } from 'src/kv-store/kv-store.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private userService: UserService,
-    private verificationService: VerificationService
+    private verificationService: VerificationService,
+    private kvStoreService: KvStoreService
   ) { }
 
   async validateUser(email: string, password: string): Promise<User> {
@@ -23,9 +25,10 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException(generateResponseMessage({ message: 'wrong email or password' }))
     }
+
     const isCompare: boolean = await bcrypt.compare(password, user.hash)
 
-    if (user && isCompare) {
+    if (isCompare) {
       return user
     }
 
@@ -34,13 +37,13 @@ export class AuthService {
 
   async singUp(data: Prisma.UserCreateInput): Promise<User> {
     const userData: User = await this.userService.create(data);
+    const { email, id } = userData;
 
-    if (userData) {
-      const { email } = userData;
+    this.kvStoreService.createSession({id: String(id)})
 
-      this.sendVerificationKey(email)
-      return userData
-    }
+    this.sendVerificationKey(email)
+    return userData
+    
   }
 
   async signIn({ email, password }: { email: string, password: string }) {
@@ -72,7 +75,7 @@ export class AuthService {
 
   async activeUserStatus(email: string): Promise<User | null> {
     const { id }: User = await this.userService.findBy({ email })
-    return await this.userService.updateProperty(id, { status: Status.active });
+    return await this.userService.updateProperty(id, { status: Status.ACTIVE });
   }
 
   async getDataFromJwt(authorization: string, option: JwtSignOptions = AccessJwtConfig){

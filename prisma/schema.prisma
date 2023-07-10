@@ -12,8 +12,8 @@ model User {
   email                     String  @unique
   login                     String  @unique
   hash                      String
-  verification_key          String 
-  verification_timestamp    String 
+  verification_key          String? 
+  verification_timestamp    String? 
   role                      Roles   @default(USER)
   status                    Status  @default(PENDING)
   isConfirmedChangePassword Boolean @default(false)

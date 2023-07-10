@@ -4,16 +4,22 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../database/prisma.service';
 import { generateResponseMessage } from '../helpers/create-res-object';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
+import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+import { redisConfig } from 'src/config/redis.config';
+import { SaveTokenDto } from './dto/save-token.dto';
+import { CreateSession, CloseSession, SetJWTProps, SetVerificationProps } from 'kv-types';
 
 
 
 @Injectable()
 export class UserService {
+
   constructor(
     private readonly prismaService: PrismaService
   ) { }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
+
     const newUser: User = await this.prismaService.user.create({
         data
       })
@@ -70,4 +76,5 @@ export class UserService {
 
     return updateUser
   }
+
 }
