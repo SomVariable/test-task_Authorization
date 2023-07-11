@@ -15,8 +15,6 @@ export class RedisService {
     async saveSession(id: string): Promise<Session> {
         const session: Session = {
             id,
-            jwtToken: null,
-            refreshToken: null,
             verificationKey: null,
             verificationTimestamp: null,
             status: 'ACTIVE'

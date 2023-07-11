@@ -64,7 +64,7 @@ export class AuthService {
 
   async generateToken(email: string, sessionKey: string,  options?: JwtSignOptions): Promise<string> {
     const user: User = await this.userService.findBy({ email })
-    const payload = { email: user.email, sub: user.id, role: user.role, sessionKey };
+    const payload = { email: user.email, sub: user.id, sessionKey }; // add role
     const jwt: string = this.jwtService.sign(payload, options)
 
     return jwt

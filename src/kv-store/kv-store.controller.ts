@@ -20,10 +20,7 @@ export class KvStoreController {
   async getSession(@Param() data){
     return this.kvStoreService.getSession(data)
   }
-  @Patch('session/jwt')
-  async setJwtProps(@Body() data){
-    return this.kvStoreService.setJwtProps(data)
-  }
+
   @Patch('session/verification')
   async setVerificationProps(@Body() data){
     return this.kvStoreService.setVerificationProps(data)

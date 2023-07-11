@@ -1,7 +1,7 @@
 import { HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory } from '@nestjs/microservices';
 import { redisConfig } from 'src/config/redis.config';
-import { CreateSession, SetJWTProps, SetVerificationProps, Session } from 'kv-types';
+import { CreateSession, SetVerificationProps, Session } from 'kv-types';
 import { firstValueFrom } from 'rxjs';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 
@@ -25,16 +25,6 @@ export class KvStoreService {
         }
     }
 
-    async setJwtProps(data: SetJWTProps): Promise<Session>{
-        try {
-            return await firstValueFrom(this.client.send<Session, SetJWTProps>('update-session', data))
-
-        } catch (error) {
-            console.log(error)
-
-            throw new InternalServerErrorException(generateResponseMessage({message: `server error. statusCode: ${error.status}`}))
-        }
-    }
 
     async setVerificationProps(data: SetVerificationProps): Promise<Session>{
         try {

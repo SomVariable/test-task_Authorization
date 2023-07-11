@@ -10,14 +10,42 @@ datasource db {
 model User {
   id                        Int     @id @default(autoincrement())
   email                     String  @unique
-  login                     String  @unique
   hash                      String
-  role                      Roles   @default(USER)
-  status                    Status  @default(PENDING)
   isConfirmedChangePassword Boolean @default(false)
+
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+  files      UserFile[]
+  profile    UserProfile?
 }
 
-enum Roles {
+model UserProfile {
+  id         Int    @id @default(autoincrement())
+  login      String @unique
+  role       Role   @default(USER)
+  status     Status @default(PENDING)
+  country    String
+  city       String
+  birth_date String
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique
+}
+
+model UserFile {
+  id            Int       @id @default(autoincrement())
+  file_name     String
+  original_name String
+  size          Int
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique
+}
+
+enum Role {
   ADMIN
   USER
 }

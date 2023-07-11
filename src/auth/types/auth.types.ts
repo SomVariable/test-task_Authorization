@@ -1,3 +1,3 @@
-import { Roles } from "@prisma/client";
+import { Role } from "@prisma/client";
 
-export type jwtType = { email: string, sub: number, role: Roles, iat: number, exp: number, sessionKey: string }
+export type jwtType = { email: string, sub: number, role: Role, iat: number, exp: number, sessionKey: string }

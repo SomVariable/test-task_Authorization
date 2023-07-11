@@ -1,31 +1,23 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, UsePipes } from '@nestjs/common';
-import { Prisma, Status, User, Roles } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { Injectable} from '@nestjs/common';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { generateResponseMessage } from '../helpers/create-res-object';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
-import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { redisConfig } from 'src/config/redis.config';
-import { SaveTokenDto } from './dto/save-token.dto';
-import { CreateSession, CloseSession, SetJWTProps, SetVerificationProps } from 'kv-types';
+
 
 
 
 @Injectable()
 export class UserService {
-
   constructor(
     private readonly prismaService: PrismaService
   ) { }
 
   async create(data: Prisma.UserCreateInput): Promise<User> {
-
     const newUser: User = await this.prismaService.user.create({
         data
       })
 
     return newUser
-
   }
 
   async findAll(): Promise<User[]> {

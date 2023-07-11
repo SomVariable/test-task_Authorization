@@ -9,6 +9,8 @@ import { VerificationModule } from './verification/verification.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mailerConfig } from './config/mailer.config';
 import { KvStoreModule } from './kv-store/kv-store.module';
+import { UserProfileModule } from './user-profile/user-profile.module';
+import { UserFileModule } from './user-file/user-file.module';
 
 @Module({
   imports: [ConfigModule.forRoot(
@@ -17,7 +19,7 @@ import { KvStoreModule } from './kv-store/kv-store.module';
     }
   ), 
   MailerModule.forRoot(mailerConfig),  
-  UserModule, AuthModule, VerificationModule, KvStoreModule],
+  UserModule, AuthModule, VerificationModule, KvStoreModule, UserProfileModule, UserFileModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
