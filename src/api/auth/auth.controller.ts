@@ -1,3 +1,4 @@
+import { JwtHelperService } from '../jwt-helper/jwt-helper.service';
 import { Controller, Get, Post, Body, Param, UseGuards, Res, UsePipes, Headers, Patch, Req, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -11,7 +12,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyUser } from './dto/verify-user.dto';
 import { DeviceType } from 'src/decorators/device-type.decorator';
 import { generateSessionKey } from 'src/helpers/create-session-key';
-import { jwtType, authUserReturnType, authVerifyReturnType } from './types/auth.types';
+import {  authUserReturnType, authVerifyReturnType } from './types/auth.types';
 import { KvStoreService } from '../kv-store/kv-store.service';
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -32,8 +33,9 @@ import { AuthUserInterceptor } from './interceptors/auth-user.interceptor';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private kvStoreService: KvStoreService,
-    private userService: UserService) { }
+    private readonly kvStoreService: KvStoreService,
+    private readonly userService: UserService,
+    private readonly jwtHelperService: JwtHelperService) { }
 
   @UseInterceptors(AuthUserInterceptor)
   @Post('sign-up')
@@ -69,7 +71,7 @@ export class AuthController {
   @UseGuards(AccessJwtAuthGuard)
   async requestPasswordChange(
     @Headers('Authorization') authorization: string) {
-    const { email, sessionKey }: jwtType = await this.authService.getDataFromJwt(authorization);
+    const { email, sessionKey } = await this.jwtHelperService.getDataFromJwt(authorization);
     const message: SentMessageInfo = await this.authService.sendVerificationKey(email, sessionKey);
 
     return message
@@ -79,12 +81,12 @@ export class AuthController {
   async login(
     @Body() { email, verifyCode }: VerifyUser,
     @DeviceType() deviceType: string): Promise<authVerifyReturnType> {
-    const { id } = await this.userService.findBy({ email })
-    const sessionKey: string = generateSessionKey(String(id), deviceType)
+    const user = await this.userService.findBy({ email })
+    const sessionKey: string = generateSessionKey(String(user.id), deviceType)
     await this.authService.isVerified(verifyCode, sessionKey)
 
-    const accessToken: string = await this.authService.generateToken(email, sessionKey, AccessJwtConfig)
-    const refreshToken: string = await this.authService.generateToken(email, sessionKey, RefreshJwtConfig)
+    const accessToken: string = await this.jwtHelperService.generateToken(user, sessionKey, AccessJwtConfig)
+    const refreshToken: string = await this.jwtHelperService.generateToken(user, sessionKey, RefreshJwtConfig)
 
       const res: authVerifyReturnType = {
         jwtToken: accessToken,
@@ -99,7 +101,7 @@ export class AuthController {
   @UseGuards(AccessJwtAuthGuard)
   async logout(
     @Headers('Authorization') authorization: string) {
-    const jwtBody: jwtType = await this.authService.getDataFromJwt(authorization)
+    const jwtBody = await this.jwtHelperService.getDataFromJwt(authorization)
     await this.authService.logout(jwtBody.sessionKey)
   }
 
@@ -108,12 +110,12 @@ export class AuthController {
     @Body() { email, verifyCode }: VerifyUser,
     @DeviceType() deviceType: string): Promise<authVerifyReturnType> {
 
-    const { id } = await this.userService.findBy({ email })
-    const sessionKey: string = generateSessionKey(String(id), deviceType)
+    const user = await this.userService.findBy({ email })
+    const sessionKey: string = generateSessionKey(String(user.id), deviceType)
     await this.authService.isVerified(verifyCode, sessionKey)
 
-    const jwtToken: string = await this.authService.generateToken(email, sessionKey, AccessJwtConfig)
-    const refreshToken: string = await this.authService.generateToken(email, sessionKey, RefreshJwtConfig)
+    const jwtToken: string = await this.jwtHelperService.generateToken(user, sessionKey, AccessJwtConfig)
+    const refreshToken: string = await this.jwtHelperService.generateToken(user, sessionKey, RefreshJwtConfig)
 
     await this.authService.activeUserStatus(email)
 
@@ -131,10 +133,11 @@ export class AuthController {
   async refreshToken(
     @Headers('Authorization') authorization: string
   ) {
-    const { email, sessionKey }: jwtType = await this.authService.getDataFromJwt(authorization, RefreshJwtConfig);
-
-    const newAccessToken: string = await this.authService.generateToken(email, sessionKey, AccessJwtConfig)
-    const newRefreshToken: string = await this.authService.generateToken(email, sessionKey, RefreshJwtConfig)
+    const { email, sessionKey } = await this.jwtHelperService.getDataFromJwt(authorization, RefreshJwtConfig);
+    const user = await this.userService.findBy({email})
+    
+    const newAccessToken: string = await this.jwtHelperService.generateToken(user, sessionKey, AccessJwtConfig)
+    const newRefreshToken: string = await this.jwtHelperService.generateToken(user, sessionKey, RefreshJwtConfig)
 
     const res: authVerifyReturnType = {
       message: SUCCESS_VERIFICATION_MESSAGE,
@@ -168,7 +171,7 @@ export class AuthController {
     @Body() { password }: ResetPasswordDto,
     @Headers('Authorization') authorization: string) {
     const hash: string = await this.authService.hashPassword(password)
-    const { email } = await this.authService.getDataFromJwt(authorization)
+    const { email } = await this.jwtHelperService.getDataFromJwt(authorization)
     const updatedUser = await this.authService.submitNewPassword(email, hash)
 
     return {

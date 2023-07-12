@@ -4,12 +4,12 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface IUsersResponse {
-    users: User[];
-    totalItems: number;
-    pagination: number;
-    page: number;
-    message?: string;
-    additionalInfo?: object;
+  users: User | User[];
+  totalCountUsers?: number;
+  pagination?: number;
+  page?: number;
+  message?: string;
+  additionalInfo?: object;
 }
 
 
@@ -18,17 +18,32 @@ export class UsersInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((data: IUsersResponse) => {
-        const {users, page, additionalInfo, message, pagination, totalItems} = data
+        const { users, page, additionalInfo, message, pagination, totalCountUsers } = data
         let responseObject
-        
-        const excludeDataFromUsers = users?.map(({email, id }) => ({email, id}))
-        responseObject = {
+        if (Array.isArray(users)) {
+          const excludeDataFromUsers = users?.map(({ email, id }) => ({ email, id }))
+          responseObject = {
             message,
-            data: excludeDataFromUsers,
-            totalItems: totalItems,
+            users: excludeDataFromUsers,
+            totalCountUsers: totalCountUsers,
             pagination: pagination,
             page: page,
-            additionalInfo 
+            additionalInfo
+          }
+
+          return JSON.stringify(responseObject);
+        }
+        const {id, email} = users
+
+        const excludeDataFromUser = {id, email} 
+
+        responseObject = {
+          message,
+          user: excludeDataFromUser,
+          totalCountUsers: totalCountUsers,
+          pagination: pagination,
+          page: page,
+          additionalInfo
         }
 
         return JSON.stringify(responseObject);

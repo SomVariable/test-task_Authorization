@@ -4,6 +4,7 @@ import { UserFileController } from './user-file.controller';
 
 @Module({
   controllers: [UserFileController],
-  providers: [UserFileService]
+  providers: [UserFileService],
+  exports: [UserFileService]
 })
 export class UserFileModule {}

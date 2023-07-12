@@ -9,7 +9,9 @@ import {
   UseInterceptors} from '@nestjs/common';
 import { KvStoreService } from './kv-store.service';
 import { KVStoreInterceptor } from './interceptors/auth.interceptor';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags("kv-store")
 @UseInterceptors(KVStoreInterceptor)
 @Controller('kv-store')
 export class KvStoreController {

@@ -47,7 +47,7 @@ export class AuthService {
     const { id } = userData;
     const sessionKey: string = generateSessionKey(String(id), deviceType)
     
-    await this.userProfileService.create({login, userId: userData.id})
+    //await this.userProfileService.create({login, userId: userData.id})
     await this.kvStoreService.createSession({id: sessionKey})
     await this.sendVerificationKey(email, sessionKey)
     
@@ -69,13 +69,6 @@ export class AuthService {
     return await this.verificationService.sendVerificationCode(email, sessionKey, verifyCode)
   }
 
-  async generateToken(email: string, sessionKey: string,  options?: JwtSignOptions): Promise<string> {
-    const {id, role, status} = await this.userService.findBy({ email })
-    const payload = { email, sub: id, sessionKey, role, status }; 
-    const jwt: string = this.jwtService.sign(payload, options)
-
-    return jwt
-  }
 
   async isVerified(verifyCode: string, sessionKey: string): Promise<boolean> {
     return await this.verificationService.validateVerifyCode(verifyCode, sessionKey);
@@ -86,12 +79,6 @@ export class AuthService {
     return await this.userService.updateProperty(id, { status: Status.ACTIVE });
   }
 
-  async getDataFromJwt(authorization: string, option: JwtSignOptions = AccessJwtConfig){
-    const token = authorization?.replace('Bearer ', '');
-    const dataFromToken = await this.jwtService.verify(token, option)
-
-    return dataFromToken ;
-  }
 
   async changeIsConfirmedChangePassword(email: string, state: boolean): Promise<User> {
     const { id } = await this.userService.findBy({ email })

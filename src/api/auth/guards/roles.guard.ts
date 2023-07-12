@@ -3,7 +3,7 @@ import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Role, User } from '@prisma/client';
-import { PrismaService } from 'nestjs-prisma';
+import { PrismaService } from '../../database/prisma.service';
 import { AccessJwtConfig } from 'src/config/jwt.config';
 
 

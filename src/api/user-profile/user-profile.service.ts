@@ -9,34 +9,33 @@ import { FindUserProfileDto } from './dto/find-user-profile.dto';
 export class UserProfileService {
 
   constructor(
-    private readonly prismaService: PrismaService
   ) { }
   
 
 
-  async create(data: CreateUserProfileDto) {
-    const newProfile = await this.prismaService.userProfile.create({
-      data
-    })
+  // async create(data: CreateUserProfileDto) {
+  //   const newProfile = await this.prismaService.userProfile.create({
+  //     data
+  //   })
     
-    return newProfile
-  }
+  //   return newProfile
+  // }
 
-  async findOne(userId: number) {
-    const profile = await this.prismaService.userProfile.findFirst({
-      where: {userId}
-    })
+  // async findOne(userId: number) {
+  //   const profile = await this.prismaService.userProfile.findFirst({
+  //     where: {userId}
+  //   })
 
-    return profile
-  }
+  //   return profile
+  // }
 
-  async update(id: number, data: Prisma.UserProfileUpdateInput) {
-    const newProfile = await this.prismaService.userProfile.update({
-      where: {id},
-      data
-    })
+  // async update(id: number, data: Prisma.UserProfileUpdateInput) {
+  //   const newProfile = await this.prismaService.userProfile.update({
+  //     where: {id},
+  //     data
+  //   })
 
-    return newProfile
-  }
+  //   return newProfile
+  // }
 
 }

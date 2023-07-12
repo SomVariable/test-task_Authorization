@@ -16,11 +16,14 @@ export class UserInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data: IUserResponse) => {
         const {user, additionalInfo, message} = data
+        const {id, email, role, status} = user
         let responseObject
         
         const excludeDataFromUser = {
-          id: user.id,
-          email: user.email,
+          id, 
+          email, 
+          role, 
+          status
         }
 
         responseObject = {

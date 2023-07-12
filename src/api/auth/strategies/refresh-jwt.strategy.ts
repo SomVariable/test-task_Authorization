@@ -2,9 +2,9 @@ import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { jwtType } from '../types/auth.types';
 import { UserService } from 'src/api/user/user.service';
 import { FORBIDDEN_MESSAGE, JWT_REFRESH } from '../constants/auth.constants';
+import { jwtType } from 'src/api/jwt-helper/types/jwt-helper.types';
 
 
 @Injectable()

@@ -12,11 +12,13 @@ import { UserModule } from '../user/user.module';
 import { VerificationModule } from '../verification/verification.module';
 import { KvStoreModule } from '../kv-store/kv-store.module';
 import { UserProfileModule } from '../user-profile/user-profile.module';
+import { JwtHelperModule } from '../jwt-helper/jwt-helper.module';
+
 
 
 @Module({
   imports: [
-    JwtModule.register({ global: true }),
+    JwtHelperModule,
     UserModule,
     PassportModule,
     VerificationModule,

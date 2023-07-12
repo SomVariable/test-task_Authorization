@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaService } from './database/prisma.service';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
-import { VerificationModule } from './verification/verification.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { mailerConfig } from './config/mailer.config';
-import { KvStoreModule } from './kv-store/kv-store.module';
-import { UserProfileModule } from './user-profile/user-profile.module';
-import { UserFileModule } from './user-file/user-file.module';
+import { JwtHelperModule } from './api/jwt-helper/jwt-helper.module';
+import { UserModule } from './api/user/user.module';
+import { AuthModule } from './api/auth/auth.module';
+import { VerificationModule } from './api/verification/verification.module';
+import { PrismaService } from 'nestjs-prisma';
+import { KvStoreModule } from './api/kv-store/kv-store.module';
+import { UserProfileModule } from './api/user-profile/user-profile.module';
+import { UserFileModule } from './api/user-file/user-file.module';
+import { DatabaseModule } from './api/database/database.module';
 
 @Module({
   imports: [ConfigModule.forRoot(
@@ -19,8 +21,8 @@ import { UserFileModule } from './user-file/user-file.module';
     }
   ), 
   MailerModule.forRoot(mailerConfig),  
-  UserModule, AuthModule, VerificationModule, KvStoreModule, UserProfileModule, UserFileModule],
+  UserModule, AuthModule, VerificationModule, KvStoreModule, UserProfileModule, UserFileModule, JwtHelperModule, DatabaseModule],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService],
 })
 export class AppModule {}
