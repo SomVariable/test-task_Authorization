@@ -69,11 +69,15 @@ export class KvStoreService {
         return null
     }
 
-    async getSession({id}: CreateSession){
-        const sessionJson: string = await this.cacheManager.get(id)
-        const session: Session = JSON.parse(sessionJson)
-        console.log(session)
-        return session
+    async getSession({id}: CreateSession): Promise<Session>{
+        console.log(id)
+        let dataFromStore: Session | string = await this.cacheManager.get(id)
+        if(typeof dataFromStore === 'string'){
+            const session: Session = JSON.parse(dataFromStore)
+
+            return session
+        }
+        return dataFromStore
     }
 
 

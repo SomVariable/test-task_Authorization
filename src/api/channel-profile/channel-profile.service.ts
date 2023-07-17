@@ -2,6 +2,8 @@ import { PrismaService } from './../database/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { CreateChannelProfileDto } from './dto/create-channel-profile.dto';
 import { UpdateChannelProfileDto } from './dto/update-channel-profile.dto';
+import { ChannelProfile } from '@prisma/client';
+import { IDs } from './types/channel-profile.types';
 
 @Injectable()
 export class ChannelProfileService {
@@ -13,9 +15,18 @@ export class ChannelProfileService {
     return await this.prismaService.channelProfile.create({data});
   }
 
-  async findOne(id: number) {
+  async findById(id: number) {
     return await this.prismaService.channelProfile.findFirst({
       where: {id}
+    });
+  }
+
+  async findBy({user_id, channel_id}: IDs) {
+    return await this.prismaService.channelProfile.findFirst({
+      where: {AND: [
+        { user_id },
+        { channel_id }
+      ]}
     });
   }
 

@@ -1,18 +1,31 @@
 import { UserPostService } from './../user-post/user-post.service';
 import { JwtHelperService } from './../jwt-helper/jwt-helper.service';
 import { ChannelProfileService } from './../channel-profile/channel-profile.service';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Body, 
+  Patch, 
+  Param, 
+  Delete, 
+  Headers, 
+  ParseIntPipe, 
+  UseGuards, 
+  UseInterceptors } from '@nestjs/common';
 import { ChannelService } from './channel.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { ChannelRole } from '@prisma/client';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
+import { ChannelInterceptor } from './interceptors/channel.interceptor';
 
 
 @ApiTags("channel")
 @ApiBearerAuth()
 @UseGuards(AccessJwtAuthGuard)
+@UseInterceptors(ChannelInterceptor)
 @Controller('channel')
 export class ChannelController {
   constructor(

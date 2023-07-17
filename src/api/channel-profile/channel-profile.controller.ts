@@ -1,22 +1,45 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { JwtHelperService } from './../jwt-helper/jwt-helper.service';
+import { 
+  ParseIntPipe, 
+  ForbiddenException, 
+  BadRequestException, 
+  Headers, 
+  Controller, 
+  Get, 
+  Post, 
+  Body, 
+  Patch, 
+  Param, 
+  Delete, 
+  UseGuards,
+  UseInterceptors } from '@nestjs/common';
 import { ChannelProfileService } from './channel-profile.service';
 import { CreateChannelProfileDto } from './dto/create-channel-profile.dto';
 import { UpdateChannelProfileDto } from './dto/update-channel-profile.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
+import { ChannelRole } from '@prisma/client';
+import { FORBIDDEN_MESSAGE } from './constants/channel-profile.constants';
+import { ChannelProfileInterceptor } from './interceptors/channel-profile.interceptor';
 
 @ApiTags("channel-profile")
+@ApiBearerAuth()
+@UseGuards(AccessJwtAuthGuard)
+@UseInterceptors(ChannelProfileInterceptor)
 @Controller('channel-profile')
 export class ChannelProfileController {
-  constructor(private readonly channelProfileService: ChannelProfileService) {}
+  constructor(
+    private readonly channelProfileService: ChannelProfileService,
+    private readonly jwtHelperService: JwtHelperService) {}
 
   @Post()
-  create(@Body() createChannelProfileDto: CreateChannelProfileDto) {
+  subscribe(@Body() createChannelProfileDto: CreateChannelProfileDto) {
     return this.channelProfileService.create(createChannelProfileDto);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.channelProfileService.findOne(+id);
+    return this.channelProfileService.findById(+id);
   }
 
   @Patch(':id')
@@ -24,8 +47,30 @@ export class ChannelProfileController {
     return this.channelProfileService.update(+id, updateChannelProfileDto);
   }
 
+  @Patch('/permission/:id')
+  async updatePermission(
+    @Headers('Authorization') authorization: string,
+    @Body() body: UpdateChannelProfileDto,
+    @Param('id', ParseIntPipe) id: number){
+    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const userProfile = await this.channelProfileService.findById(id)
+    const {channel_id} = userProfile
+    const adminProfile = await this.channelProfileService.findBy({user_id: sub, channel_id: channel_id})
+    const {role} = adminProfile
+    console.log(role)
+    if(role !== ChannelRole.ADMIN && role !== ChannelRole.CREATOR){
+      throw new ForbiddenException(FORBIDDEN_MESSAGE)
+    }
+
+    if(body.role === ChannelRole.CREATOR){
+      throw new BadRequestException()
+    }
+
+    return this.channelProfileService.update(id, body)
+  }
+
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  unsubscribe(@Param('id') id: string) {
     return this.channelProfileService.remove(+id);
   }
 }
