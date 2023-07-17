@@ -6,7 +6,7 @@ import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DeviceType } from 'src/decorators/device-type.decorator';
 import { IUserResponse, UserInterceptor } from './interceptors/user.interceptor';
-import { IUsersResponse, UsersInterceptor } from './interceptors/users.interceptor';
+import { IUsersResponse, UsersInterceptor, userUnion } from './interceptors/users.interceptor';
 import { RolesDecorator } from '../roles/roles.decorator';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
@@ -29,7 +29,7 @@ export class UserController {
   ) { }
 
   @UseInterceptors(UserInterceptor)
-  @Get(':id')
+  @Get('')
   async getSelf(
     @Headers('Authorization') authorization: string
     ): Promise<IUserResponse> {
@@ -43,7 +43,7 @@ export class UserController {
     return res
   }
 
-  @Delete(':id')
+  @Delete('')
   async remove(
     @Headers('Authorization') authorization: string)
     : Promise<IUserResponse> {
@@ -87,7 +87,6 @@ export class UserController {
 }
 
 @ApiTags("users")
-@ApiBearerAuth()
 @UseInterceptors(UsersInterceptor)
 @Controller('users')
 export class UsersController {
@@ -98,13 +97,22 @@ export class UsersController {
   ) { }
 
   @Get('')
-  async findUsers(@Query('page', ParseIntPipe) page: number = 1): Promise<IUsersResponse> {
-    const users = await this.userService.findUsers(page);
+  async findUsers(
+    @Query('page', ParseIntPipe) page: number = 1,
+    @Query('limit', ParseIntPipe) limit: number = LIMIT_USERS
+    ): Promise<IUsersResponse> {
+    const _limit = limit > LIMIT_USERS? LIMIT_USERS: limit
+    const users = await this.userService.findUsers(page, _limit);
+    const IDs = users.map(user => user.id) 
+    const usersProfiles = await this.userProfileService.findMany(IDs)
+    const usersUnions: userUnion[] = users.map((user, index) => {
+      return {...user, ...usersProfiles[index]}
+    })
     const totalCount = await this.userService.getTotalCount()
     const res: IUsersResponse = {
-      users,
+      users: usersUnions,
       page,
-      pagination: LIMIT_USERS,
+      pagination: _limit,
       totalCountUsers: totalCount
     }
 
@@ -114,9 +122,12 @@ export class UsersController {
   @Get(':id')
   async findUserById(@Param('id', ParseIntPipe) id: number): Promise<IUsersResponse> {
     const user = await this.userService.findById(id);
-
+    const userProfile = await this.userProfileService.findOne(id)
     const res: IUsersResponse = {
-      users: user
+      users: {
+        ...user,
+        ...userProfile
+      }
     }
 
     return res

@@ -7,6 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Channel {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  posts          UserPost[]
+  ChannelProfile ChannelProfile[]
+}
+
+model ChannelProfile {
+  id   Int         @id @default(autoincrement())
+  role ChannelRole @default(USER)
+
+  channel    Channel @relation(fields: [channel_id], references: [id])
+  user       User    @relation(fields: [user_id], references: [id])
+  channel_id Int 
+  user_id    Int 
+}
+
 model User {
   id                        Int      @id @default(autoincrement())
   email                     String   @unique
@@ -17,8 +35,10 @@ model User {
   created_at                DateTime @default(now())
   updated_at                DateTime @updatedAt
 
-  files   UserFile[]
-  profile UserProfile?
+  files          UserFile[]
+  profile        UserProfile?
+  post           UserPost[]
+  ChannelProfile ChannelProfile[]
 }
 
 model UserProfile {
@@ -31,24 +51,37 @@ model UserProfile {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  avatar UserFile?
-  user   User @relation(fields: [userId], references: [id])
-  userId Int  @unique
+  avatar  UserFile?
+  user    User      @relation(fields: [user_id], references: [id])
+  user_id Int       @unique
 }
 
 model UserFile {
-  id            Int       @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   file_name     String
   original_name String
   size          Int
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  deleted_at    DateTime?
+  mimetype      String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  user   User @relation(fields: [userId], references: [id])
-  userId Int  @unique
-  profile UserProfile @relation(fields: [profileId], references: [id])
-  profileId Int @unique 
+  user         User         @relation(fields: [user_id], references: [id])
+  user_id      Int
+  profile      UserProfile? @relation(fields: [profile_id], references: [id])
+  profile_id   Int?         @unique
+  user_post    UserPost?    @relation(fields: [user_post_id], references: [id])
+  user_post_id Int?
+}
+
+model UserPost {
+  id    Int        @id @default(autoincrement())
+  text  String
+  files UserFile[]
+
+  author     User     @relation(fields: [author_id], references: [id])
+  author_id  Int
+  channel    Channel? @relation(fields: [channel_id], references: [id])
+  channel_id Int?
 }
 
 enum Role {
@@ -60,4 +93,10 @@ enum Status {
   PENDING
   ACTIVE
   BLOCKED
+}
+
+enum ChannelRole {
+  CREATOR
+  ADMIN
+  USER
 }

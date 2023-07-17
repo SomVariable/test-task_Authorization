@@ -1,6 +1,6 @@
 
 import { Injectable} from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User, UserProfile } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
 import { LIMIT_USERS } from './constants/user.constants';
@@ -22,10 +22,11 @@ export class UserService {
     return newUser
   }
 
-  async findUsers(page: number): Promise<User[]> {
+
+  async findUsers(page: number, limit: number): Promise<User[]> {
     const user: User[] = await this.prismaService.user.findMany({
-      skip: (page - 1) * LIMIT_USERS,
-      take:  LIMIT_USERS
+      skip: (page - 1) * limit,
+      take:  limit
     })
     return user
   }

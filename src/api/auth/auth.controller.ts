@@ -41,7 +41,7 @@ export class AuthController {
   @Post('sign-up')
   async signUp(
     @DeviceType() deviceType: string,
-    @Body() { email, login, password }: CreateUserDto & CreateUserProfileDto) :Promise<authUserReturnType>{
+    @Body() { email, login, password }: CreateUserDto) :Promise<authUserReturnType>{
     const hash: string = await this.authService.hashPassword(password)
     const user = await this.authService.singUp({ email, login, password: hash }, deviceType);
 

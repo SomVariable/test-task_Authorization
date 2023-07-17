@@ -10,20 +10,19 @@ import { ApiTags } from '@nestjs/swagger';
 export class UserProfileController {
   constructor(private readonly userProfileService: UserProfileService) {}
 
-  // @Post()
-  // create(@Body() createProfileData: CreateUserProfileDto) {
-  //   return this.userProfileService.create(createProfileData);
-  // }
+  @Post()
+  create(@Body() createProfileData: CreateUserProfileDto) {
+    return this.userProfileService.create(createProfileData);
+  }
 
+  @Get(':id')
+  findOne(@Param(ParseIntPipe) {userId}: FindUserProfileDto) {
+    return this.userProfileService.findOne(userId);
+  }
 
-  // @Get(':id')
-  // findOne(@Param(ParseIntPipe) {userId}: FindUserProfileDto) {
-  //   return this.userProfileService.findOne(userId);
-  // }
-
-  // @Patch(':id')
-  // update(@Param(ParseIntPipe) id: number, @Body() updateUserProfileData: UpdateUserProfileDto) {
-  //   return this.userProfileService.update(id, updateUserProfileData);
-  // }
+  @Patch(':id')
+  update(@Param(ParseIntPipe) id: number, @Body() updateUserProfileData: UpdateUserProfileDto) {
+    return this.userProfileService.update(id, updateUserProfileData);
+  }
 
 }

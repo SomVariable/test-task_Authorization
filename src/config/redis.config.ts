@@ -1,10 +1,17 @@
-import { ClientOptions, MicroserviceOptions, Transport } from '@nestjs/microservices';
+import  * as redisStore from 'cache-manager-redis-store';
+import {RedisClientOptions} from 'redis'
 import appConfig from './configuration.config';
 
-export const redisConfig : ClientOptions  = {
-  transport: Transport.REDIS,
-  options: {
-    url: appConfig().REDIS_URL
-  },
+const config = appConfig()
+
+export const redisConfig: RedisClientOptions = {
+  store: redisStore,
+  isGlobal: true,
+
+  host: config.REDIS_HOST,
+  port: config.REDIS_PORT,
+  
+  // Store-specific configuration:
+  
 }
 

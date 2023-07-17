@@ -4,10 +4,10 @@ import { User } from '@prisma/client';
 import { SentMessageInfo } from 'nodemailer';
 import { generateSendObject } from 'src/config/mailer.config';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
-import { Session, SetVerificationProps } from 'kv-types';
 import { UserService } from '../user/user.service';
 import { KvStoreService } from '../kv-store/kv-store.service';
 import { VERIFY_KEY_TIMESTAMP } from './constants/constants';
+import { Session, SetVerificationProps } from '../kv-store/kv-types/kv-store.type';
 
 @Injectable()
 export class VerificationService {
@@ -17,7 +17,7 @@ export class VerificationService {
         private readonly kvStoreService: KvStoreService
     ) { }
 
-    async sendVerificationCode(email: string, sessionKey: string, verificationKey: string): Promise<SentMessageInfo | null> {
+    async sendVerificationCode(email: string, sessionKey: string, verificationKey: string) {
         try {
             const data: SetVerificationProps = {
                 id: sessionKey, 
@@ -26,6 +26,8 @@ export class VerificationService {
             }
 
             await this.kvStoreService.setVerificationProps(data)
+
+            return true
 
             return await this.mailerService.sendMail(generateSendObject(email, verificationKey));
         } catch (error) {
@@ -48,6 +50,9 @@ export class VerificationService {
         if (parseInt(session.verificationTimestamp) + VERIFY_KEY_TIMESTAMP < Date.now()) {
             throw new BadRequestException(generateResponseMessage({message: `Sorry, but you overstayed your verification key. Please reauthenticate`}))
         }
+
+        console.log(session)
+        console.log(verifyCode)
 
         if (session.verificationKey !== verifyCode) {
             throw new BadRequestException(generateResponseMessage({message: `Wrong verification key`}))

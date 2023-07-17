@@ -3,7 +3,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExecutionContext, Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { Session } from 'kv-types';
 import { AuthService } from '../auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { isEqual } from 'lodash';
@@ -24,7 +23,7 @@ export class AccessJwtStrategy extends PassportStrategy(Strategy, ACCESS_JWT_STR
   }
 
   async validate(payload: jwtType ) {
-    const session: Session = await this.KvStoreService.getSession({id: payload.sessionKey})
+    const session = await this.KvStoreService.getSession({id: payload.sessionKey})
     
     if(session.status === 'BLOCKED'){
       throw new BadRequestException(BLOCKED_SESSION_MESSAGE)

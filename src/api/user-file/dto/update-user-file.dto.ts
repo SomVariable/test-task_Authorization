@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/swagger';
+import { PartialType, PickType } from '@nestjs/swagger';
 import { CreateUserFileDto } from './create-user-file.dto';
 
-export class UpdateUserFileDto extends PartialType(CreateUserFileDto) {}
+export class UpdateUserFileDto extends PickType(CreateUserFileDto, ['original_name']) {}

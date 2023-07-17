@@ -12,3 +12,4 @@ export const RefreshJwtConfig: JwtSignOptions = {
   secret: appConfig().REFRESH_SECRET_KEY,
   expiresIn : '90d',
 };
+

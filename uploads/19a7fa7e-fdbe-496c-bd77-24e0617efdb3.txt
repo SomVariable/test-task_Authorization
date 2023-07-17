@@ -1,0 +1,24 @@
+1) Роуты в кебаб-кейс      
+2) extends PartialType(ClassName) {}           
+3) Енумы в апппер кейсе                    
+4) Файлы тоже в кебаб                        
+5) env.example                                          
+6) перекинуть хеширование в ауз, и модифицировать пайп      
+7) порядочить структуру роутов                                                
+8) PartialDtoValidationPipe удалить                                                          
+9) хуки shutdown 
+10) gracefull process exit
+11) Проверять ошибки до запроса 
+12)добавить вapp.useGlobalFilters : new PrismaClientExceptionFilter(httpAdapter)
+13) удалить надстройки                               
+14) ДТО регистрация/аторизация в одну папку
+15) вынести пароль в декоратор
+16) по hедерам корс(CORS Allowed Headers)(Authorization / X-API-KEY)     
+17) подменить +id на ParseIntPipe     
+
+
+
+
+
+Work List:                                                                   
+7) порядочить структуру роутов 

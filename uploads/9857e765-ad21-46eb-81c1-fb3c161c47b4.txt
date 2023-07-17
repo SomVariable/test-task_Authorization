@@ -1,0 +1,34 @@
+{
+    "users": [
+        {
+            "email": "testEmail1@gmail.com",
+            "login": "testEmail1",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        }, 
+        {
+            "email": "testEmail2@gmail.com",
+            "login": "testEmail2",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        },
+        {
+            "email": "testEmail3@gmail.com",
+            "login": "testEmail3",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        },
+        {
+            "email": "testEmail4@gmail.com",
+            "login": "testEmail4",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        },
+        {
+            "email": "testEmail5@gmail.com",
+            "login": "testEmail5",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        },
+        {
+            "email": "testEmail6@gmail.com",
+            "login": "testEmail6",
+            "password": "QWE123@@@@___FDSDFSDFFSD"
+        }
+    ]
+}

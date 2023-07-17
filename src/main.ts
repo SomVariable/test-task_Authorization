@@ -11,8 +11,8 @@ async function bootstrap() {
   const { httpAdapter } = app.get(HttpAdapterHost);
 
   app.enableCors({ credentials: true, origin: true });
-  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter))
   app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
+  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter))
   app.use(cookieParser());
 
   const config = new DocumentBuilder()
