@@ -1,11 +1,14 @@
 import appConfig from './configuration.config';
 
+const config = appConfig()
+
+
 export const minioConfig = {
-    endPoint: appConfig().MINIO_HOST,
-    port: parseInt(appConfig().MINIO_PORT),
+    endPoint: config.MINIO_HOST,
+    port: parseInt(config.MINIO_PORT),
     useSSL: false,
-    accessKey:appConfig().MINIO_ACCESS_KEY,
-    secretKey:appConfig().MINIO_SECRET_KEY
+    accessKey:config.MINIO_ACCESS_KEY,
+    secretKey:config.MINIO_SECRET_KEY
   };
 
 

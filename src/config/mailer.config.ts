@@ -1,13 +1,15 @@
 import { MailerOptions } from '@nestjs-modules/mailer';
 import appConfig from './configuration.config';
 
+const config = appConfig()
+
 export const mailerConfig: MailerOptions = {
     transport: {
-        host: appConfig().MAILGUN_HOST,
-        port: parseInt(appConfig().MAILGUN_PORT),
+        host: config.MAILGUN_HOST,
+        port: parseInt(config.MAILGUN_PORT),
         auth: {
-          user: appConfig().MAILGUN_USER,
-          pass: appConfig().MAILGUN_PASS
+          user: config.MAILGUN_USER,
+          pass: config.MAILGUN_PASS
         },
       }
   };
