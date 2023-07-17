@@ -1,26 +1,16 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { User, UserProfile } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { UserReturnType, usersResponse } from '../types/user.types';
 
-export type userUnion = UserProfile & User 
-export type UserReturnType = Pick<User, "email"> & Pick<UserProfile, "login" | "birth_date" | "city" | "country">
 
-export interface IUsersResponse {
-  users: userUnion | userUnion[];
-  totalCountUsers?: number;
-  pagination?: number;
-  page?: number;
-  message?: string;
-  additionalInfo?: object;
-}
 
 
 @Injectable()
 export class UsersInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map((data: IUsersResponse) => {
+      map((data: usersResponse) => {
         const { users, page, additionalInfo, message, pagination, totalCountUsers } = data
         let responseObject
         if (Array.isArray(users)) {

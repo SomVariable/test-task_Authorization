@@ -2,19 +2,13 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nes
 import { User } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-export interface IUserResponse {
-  user: User;
-  message?: string;
-  additionalInfo?: object;
-}
-
+import { userResponse } from '../types/user.types';
 
 @Injectable()
 export class UserInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map((data: IUserResponse) => {
+      map((data: userResponse) => {
         const {user, additionalInfo, message} = data
         const {id, email, role, status} = user
         let responseObject

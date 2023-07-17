@@ -1,3 +1,4 @@
+import { ERROR_MESSAGE } from './constants/minio.const';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as Minio from 'minio'
 import { minioConfig } from 'src/config/minIo.config';
@@ -25,10 +26,8 @@ export class MinioService {
       await this.client.putObject(this.bucketName, filename, file.buffer);
 
       return filename;  
-    } catch (error) {
-      console.log(error)
-
-      throw new Error('error')
+    } catch (error) { 
+      throw new Error(error)
     }  
   }
 
@@ -40,7 +39,7 @@ export class MinioService {
       return objectStream;
     } catch (error) {
       console.log(error);
-      throw new Error('Failed to retrieve file');
+      throw new Error(ERROR_MESSAGE);
     }
   }
 
@@ -64,7 +63,7 @@ export class MinioService {
       });
     } catch (error) {
       console.log(error);
-      throw new Error('Failed to retrieve files');
+      throw new Error(ERROR_MESSAGE);
     }
   }
 
@@ -73,7 +72,7 @@ export class MinioService {
       await this.client.removeObject(this.bucketName, fileName);
     } catch (error) {
       console.log(error);
-      throw new Error('Failed to delete file');
+      throw new Error(ERROR_MESSAGE);
     }
   }
 

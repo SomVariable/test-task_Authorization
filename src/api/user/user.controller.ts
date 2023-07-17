@@ -5,8 +5,8 @@ import { Role, Status, User } from '@prisma/client';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { DeviceType } from 'src/decorators/device-type.decorator';
-import { IUserResponse, UserInterceptor } from './interceptors/user.interceptor';
-import { IUsersResponse, UsersInterceptor, userUnion } from './interceptors/users.interceptor';
+import {  UserInterceptor } from './interceptors/user.interceptor';
+import { UsersInterceptor } from './interceptors/users.interceptor';
 import { RolesDecorator } from '../roles/roles.decorator';
 import { UpdateUserDto } from '../auth/dto/update-user.dto';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
@@ -14,6 +14,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserFileService } from '../user-file/user-file.service';
 import { JwtHelperService } from '../jwt-helper/jwt-helper.service';
 import { LIMIT_USERS } from './constants/user.constants';
+import { userResponse, userUnion, usersResponse } from './types/user.types';
 
 @ApiTags("user")
 @ApiBearerAuth()
@@ -23,8 +24,6 @@ import { LIMIT_USERS } from './constants/user.constants';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly userProfileService: UserProfileService,
-    private readonly userFileService: UserFileService,
     private readonly jwtHelperService: JwtHelperService
   ) { }
 
@@ -32,11 +31,11 @@ export class UserController {
   @Get('')
   async getSelf(
     @Headers('Authorization') authorization: string
-    ): Promise<IUserResponse> {
+    ): Promise<userResponse> {
     const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
     const user = await this.userService.findById(sub);
 
-    const res: IUserResponse = {
+    const res: userResponse = {
       user
     }
 
@@ -46,11 +45,11 @@ export class UserController {
   @Delete('')
   async remove(
     @Headers('Authorization') authorization: string)
-    : Promise<IUserResponse> {
+    : Promise<userResponse> {
     const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
     const deletedUser = await this.userService.remove(sub);
 
-    const res: IUserResponse = {
+    const res: userResponse = {
       user: deletedUser
     }
 
@@ -60,11 +59,11 @@ export class UserController {
   @Patch('')
   async update(
     @Headers('Authorization') authorization: string, 
-    @Body() data: UpdateUserDto): Promise<IUserResponse>{
+    @Body() data: UpdateUserDto): Promise<userResponse>{
     const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
     const blockedUser = await this.userService.updateProperty(sub, data);
 
-    const res: IUserResponse = {
+    const res: userResponse = {
       user: blockedUser
     }
 
@@ -74,11 +73,11 @@ export class UserController {
   @Patch('block')
   async block(
     @Headers('Authorization') authorization: string
-    ): Promise<IUserResponse>{
+    ): Promise<userResponse>{
     const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
     const blockedUser = await this.userService.updateProperty(sub, { status: Status.BLOCKED });
 
-    const res: IUserResponse = {
+    const res: userResponse = {
       user: blockedUser
     }
 
@@ -100,7 +99,7 @@ export class UsersController {
   async findUsers(
     @Query('page', ParseIntPipe) page: number = 1,
     @Query('limit', ParseIntPipe) limit: number = LIMIT_USERS
-    ): Promise<IUsersResponse> {
+    ): Promise<usersResponse> {
     const _limit = limit > LIMIT_USERS? LIMIT_USERS: limit
     const users = await this.userService.findUsers(page, _limit);
     const IDs = users.map(user => user.id) 
@@ -109,7 +108,7 @@ export class UsersController {
       return {...user, ...usersProfiles[index]}
     })
     const totalCount = await this.userService.getTotalCount()
-    const res: IUsersResponse = {
+    const res: usersResponse = {
       users: usersUnions,
       page,
       pagination: _limit,
@@ -120,10 +119,10 @@ export class UsersController {
   }
 
   @Get(':id')
-  async findUserById(@Param('id', ParseIntPipe) id: number): Promise<IUsersResponse> {
+  async findUserById(@Param('id', ParseIntPipe) id: number): Promise<usersResponse> {
     const user = await this.userService.findById(id);
     const userProfile = await this.userProfileService.findOne(id)
-    const res: IUsersResponse = {
+    const res: usersResponse = {
       users: {
         ...user,
         ...userProfile
