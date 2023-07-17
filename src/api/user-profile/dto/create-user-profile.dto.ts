@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsUUID, MaxLength, MinLength } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 
 export class CreateUserProfileDto {
     @ApiProperty()
@@ -10,6 +10,21 @@ export class CreateUserProfileDto {
 
     @ApiProperty()
     @IsNotEmpty()
-    @IsUUID()
+    @IsNumber()
     user_id: number;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    country?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    city?: string;
+
+    @ApiProperty()
+    @IsOptional()
+    @IsString()
+    birth_date?: string;
 }

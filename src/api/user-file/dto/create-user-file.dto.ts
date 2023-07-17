@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateUserFileDto {
@@ -7,13 +7,13 @@ export class CreateUserFileDto {
     @IsNotEmpty()
     user_id: number;
     
-    @ApiProperty()
+    @ApiPropertyOptional()
     @IsNumber()
     @IsOptional()
     @IsNotEmpty()
     user_post_id?: number;
     
-    @ApiProperty()
+    @ApiPropertyOptional()
     @IsNumber()
     @IsOptional()
     @IsNotEmpty()

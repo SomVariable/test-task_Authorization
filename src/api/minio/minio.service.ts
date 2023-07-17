@@ -1,4 +1,4 @@
-import { ERROR_MESSAGE } from './constants/minio.const';
+import { ERROR_MESSAGE } from './constants/minio.constants';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as Minio from 'minio'
 import { minioConfig } from 'src/config/minIo.config';

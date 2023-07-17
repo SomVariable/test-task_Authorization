@@ -40,9 +40,9 @@ export class UserProfileService {
     return profiles
   }
 
-  async update(id: number, data: Prisma.UserProfileUpdateInput) {
+  async update(userId: number, data: Prisma.UserProfileUpdateInput) {
     const newProfile = await this.prismaService.userProfile.update({
-      where: {id},
+      where: {user_id: userId},
       data
     })
 

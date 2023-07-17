@@ -80,19 +80,17 @@ export class UserFileService {
     ): Promise<UserFile[]> {
     const file = await  this.prismaService.userFile.findMany({
       where: {
-        id: {in: IDs},
-        user_id, 
-        profile_id, 
-        user_post_id
+        user_id,
+        OR: [{profile_id}, {user_post_id}]
       }
     })
 
     return file;
   }
 
-  async findOne(userId: number, id: number) {
+  async findOne(id: number) {
     const file = await  this.prismaService.userFile.findFirst({
-      where: {id, user_id: userId}
+      where: {id}
     })
 
     return file;
@@ -119,7 +117,7 @@ export class UserFileService {
     })
 
     const files = await  this.prismaService.userFile.deleteMany({
-      where: {id: {in: files_IDs}, ...IDs}
+      where: {id: {in: files_IDs}}
     })
 
     return files;

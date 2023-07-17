@@ -13,7 +13,7 @@ import {
   ParseIntPipe, 
   Res,
   UploadedFile, 
-  StreamableFile} from '@nestjs/common';
+  Query} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserFileService } from './user-file.service';
 import { CreateUserFileDto } from './dto/create-user-file.dto';
@@ -23,6 +23,7 @@ import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
 import { JwtHelperService } from '../jwt-helper/jwt-helper.service';
 
 import { Response } from 'express';
+import { FindUserFileDto } from './dto/find-user-file.dto';
 
 @ApiTags("users-files")
 @ApiBearerAuth()
@@ -60,23 +61,23 @@ export class UserFileController {
     return newFileData
   }
 
-  @Get()
+  @Post('files')
   async findAll(
     @Headers('Authorization') authorization: string,
+    @Body() body: FindUserFileDto
   ) {
+    console.log(body)
     const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
 
-    return this.userFileService.findAll({user_id: sub});
+    return this.userFileService.findAll({user_id: sub, ...body});
   }
 
   @Get(':fileId')
   async findOne(
-    @Headers('Authorization') authorization: string, 
     @Param('fileId', ParseIntPipe) fileId: number,
     @Res() res: Response
     ) {
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
-    const fileInfo = await this.userFileService.findOne(sub, fileId); 
+    const fileInfo = await this.userFileService.findOne(fileId); 
 
     const stream = await this.minioService.getFile(fileInfo.file_name);
 
@@ -86,10 +87,9 @@ export class UserFileController {
     stream.pipe(res)
   }
 
-  @Delete()
+  @Delete(':id')
   async remove(
-    @Headers('Authorization') authorization: string,
-    @Body('fileId', ParseIntPipe) fileId: number
+    @Param('fileId', ParseIntPipe) fileId: number
     ) {
     return this.userFileService.remove(fileId);
   }

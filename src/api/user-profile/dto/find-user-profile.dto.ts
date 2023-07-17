@@ -1,9 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsUUID} from "class-validator";
+import { IsNotEmpty, IsString} from "class-validator";
 
 export class FindUserProfileDto {
     @ApiProperty()
     @IsNotEmpty()
-    @IsUUID()
-    userId: number;
+    @IsString()
+    userId: string;
 }
