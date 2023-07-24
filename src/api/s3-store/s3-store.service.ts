@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as S3 from 'minio'
-import { S3Config } from 'src/config/S3.config';
+import { S3Config } from '../../config/s3.config';
 import { ERROR_MESSAGE } from './constants/s3-store.constants';
 
 @Injectable()
