@@ -12,7 +12,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyUser } from './dto/verify-user.dto';
 import { DeviceType } from 'src/decorators/device-type.decorator';
 import { generateSessionKey } from 'src/helpers/create-session-key';
-import {  authUserReturnType, authVerifyReturnType } from './types/auth.types';
+import { authUserReturnType, authVerifyReturnType } from './types/auth.types';
 import { KvStoreService } from '../kv-store/kv-store.service';
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,6 +26,8 @@ import {
 } from './constants/auth.constants';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { AuthUserInterceptor } from './interceptors/auth-user.interceptor';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 @ApiTags("auth")
 @UseInterceptors(AuthInterceptor)
@@ -41,7 +43,8 @@ export class AuthController {
   @Post('sign-up')
   async signUp(
     @DeviceType() deviceType: string,
-    @Body() { email, login, password }: CreateUserDto) :Promise<authUserReturnType>{
+    @Body() data: CreateUserDto): Promise<authUserReturnType> {
+    const { email, login, password } = data
     const hash: string = await this.authService.hashPassword(password)
     const user = await this.authService.singUp({ email, login, password: hash }, deviceType);
 
@@ -50,13 +53,14 @@ export class AuthController {
       user
     }
 
+
     return resObject
   }
 
   @UseInterceptors(AuthUserInterceptor)
   @Post('sign-in')
   @UseGuards(AuthGuard('local'))
-  async signIn(@DeviceType() deviceType: string, @Body() { email, password }: SignInDto):Promise<authUserReturnType> {
+  async signIn(@DeviceType() deviceType: string, @Body() { email, password }: SignInDto): Promise<authUserReturnType> {
     const user = await this.authService.signIn({ password, email }, deviceType);
 
     const resObject: authUserReturnType = {
@@ -70,8 +74,7 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(AccessJwtAuthGuard)
   async requestPasswordChange(
-    @Headers('Authorization') authorization: string) {
-    const { email, sessionKey } = await this.jwtHelperService.getDataFromJwt(authorization);
+    @UserParam() { email, sessionKey }: jwtType) {
     const message: SentMessageInfo = await this.authService.sendVerificationKey(email, sessionKey);
 
     return message
@@ -88,10 +91,10 @@ export class AuthController {
     const accessToken: string = await this.jwtHelperService.generateToken(user, sessionKey, AccessJwtConfig)
     const refreshToken: string = await this.jwtHelperService.generateToken(user, sessionKey, RefreshJwtConfig)
 
-      const res: authVerifyReturnType = {
-        jwtToken: accessToken,
-        refreshToken
-      }
+    const res: authVerifyReturnType = {
+      jwtToken: accessToken,
+      refreshToken
+    }
 
     return res
   }
@@ -100,8 +103,7 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(AccessJwtAuthGuard)
   async logout(
-    @Headers('Authorization') authorization: string) {
-    const jwtBody = await this.jwtHelperService.getDataFromJwt(authorization)
+    @UserParam() jwtBody: jwtType) {
     await this.authService.logout(jwtBody.sessionKey)
   }
 
@@ -131,11 +133,10 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(RefreshJwtAuthGuard)
   async refreshToken(
-    @Headers('Authorization') authorization: string
+    @UserParam() { email, sessionKey }: jwtType
   ) {
-    const { email, sessionKey } = await this.jwtHelperService.getDataFromJwt(authorization, RefreshJwtConfig);
-    const user = await this.userService.findBy({email})
-    
+    const user = await this.userService.findBy({ email })
+
     const newAccessToken: string = await this.jwtHelperService.generateToken(user, sessionKey, AccessJwtConfig)
     const newRefreshToken: string = await this.jwtHelperService.generateToken(user, sessionKey, RefreshJwtConfig)
 
@@ -169,9 +170,8 @@ export class AuthController {
   @UseGuards(AccessJwtAuthGuard)
   async submitNewPassword(
     @Body() { password }: ResetPasswordDto,
-    @Headers('Authorization') authorization: string) {
+    @UserParam() { email }: jwtType) {
     const hash: string = await this.authService.hashPassword(password)
-    const { email } = await this.jwtHelperService.getDataFromJwt(authorization)
     const updatedUser = await this.authService.submitNewPassword(email, hash)
 
     return {

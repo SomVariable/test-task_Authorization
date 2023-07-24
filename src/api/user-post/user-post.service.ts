@@ -13,6 +13,7 @@ export class UserPostService {
   ) { }
 
   async create(IDs: PostIDsType, message: string, files?: Express.Multer.File[]) {
+    console.log(IDs)
     const newPostData = await this.prismaService.userPost.create({
       data: {
         text: message,

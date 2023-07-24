@@ -14,9 +14,7 @@ import {
   FileTypeValidator, 
   UploadedFile, 
   UseInterceptors, 
-  UsePipes, 
-  MaxFileSizeValidator, 
-  ParseFilePipe,
+  Req,
   UseGuards } from '@nestjs/common';
 import { UserProfileService } from './user-profile.service';
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
@@ -27,6 +25,9 @@ import * as FileType from 'file-type';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
 import { UserProfileInterceptor } from './interceptors/user-profile.interceptor';
+import { imageFileFilter } from '../user-file/helpers/fileFilters.helper';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 @ApiTags("users-profile")
 @ApiBearerAuth()
@@ -46,16 +47,16 @@ export class UserProfileController {
   }
 
   @Get()
-  async findOne(@Headers('Authorization') authorization: string) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+  async findOne(@UserParam() jwtBody: jwtType) {
+    const {sub} = jwtBody
     return this.userProfileService.findOne(sub);
   }
 
   @Patch()
   async update(
-    @Headers('Authorization') authorization: string, 
+    @UserParam() jwtBody: jwtType, 
     @Body() updateUserProfileData: UpdateUserProfileDto) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userProfileService.update(sub, updateUserProfileData);
   }
@@ -72,18 +73,20 @@ export class UserProfileController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    fileFilter: imageFileFilter
+  }))
   @Patch(':id/avatar')
-  async uploadAvatar(@UploadedFile(new ParseFilePipe({
-    validators: [
-      new MaxFileSizeValidator({ maxSize: 10000000 }),
-      new FileTypeValidator({ fileType: 'image/jpeg' }),
-    ],
-  }),)  file: Express.Multer.File,
+  async uploadAvatar(@UploadedFile()  file: Express.Multer.File,
   @Param('id', ParseIntPipe) id: number,
-  @Headers('Authorization') authorization: string,
+  @UserParam() jwtBody: jwtType,
+  @Req() req: any
   ){
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
+
+    if(!file || req.fileValidationError){
+      throw new BadRequestException('only image is allowed')
+    }
 
     this.userFileService.create(file, {user_id: sub, profile_id: id})
   }

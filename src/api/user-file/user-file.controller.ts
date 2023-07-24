@@ -1,4 +1,4 @@
-import { MinioService } from './../minio/minio.service';
+import { S3Service } from '../s3-store/s3-store.service';
 import { 
   UseInterceptors, 
   Controller, 
@@ -13,7 +13,8 @@ import {
   ParseIntPipe, 
   Res,
   UploadedFile, 
-  Query} from '@nestjs/common';
+  Query,
+  ForbiddenException} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserFileService } from './user-file.service';
 import { CreateUserFileDto } from './dto/create-user-file.dto';
@@ -24,6 +25,9 @@ import { JwtHelperService } from '../jwt-helper/jwt-helper.service';
 
 import { Response } from 'express';
 import { FindUserFileDto } from './dto/find-user-file.dto';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
+import { ANOTHER_USER_FILE_MESSAGE } from './constants/user-file.constants';
 
 @ApiTags("users-files")
 @ApiBearerAuth()
@@ -33,7 +37,7 @@ export class UserFileController {
   constructor(
     private readonly userFileService: UserFileService,
     private readonly jwtHelperService: JwtHelperService,
-    private readonly minioService: MinioService
+    private readonly S3Service: S3Service
     ) {}
 
   @Post()
@@ -51,10 +55,10 @@ export class UserFileController {
   })
   @UseInterceptors(FileInterceptor('file'))
   async create(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @UploadedFile() file: Express.Multer.File
     ) {
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     
     const newFileData = await this.userFileService.create(file, {user_id: sub})
     
@@ -63,11 +67,11 @@ export class UserFileController {
 
   @Post('files')
   async findAll(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @Body() body: FindUserFileDto
   ) {
     console.log(body)
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userFileService.findAll({user_id: sub, ...body});
   }
@@ -75,11 +79,12 @@ export class UserFileController {
   @Get(':fileId')
   async findOne(
     @Param('fileId', ParseIntPipe) fileId: number,
-    @Res() res: Response
+    @Res() res: Response,
+    @UserParam() {sub}: jwtType,
     ) {
-    const fileInfo = await this.userFileService.findOne(fileId); 
+    const fileInfo = await this.userFileService.findOne(fileId, sub); 
 
-    const stream = await this.minioService.getFile(fileInfo.file_name);
+    const stream = await this.S3Service.getFile(fileInfo?.file_name);
 
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.file_name}"`);
@@ -87,10 +92,11 @@ export class UserFileController {
     stream.pipe(res)
   }
 
-  @Delete(':id')
+  @Delete(':fileId')
   async remove(
-    @Param('fileId', ParseIntPipe) fileId: number
+    @Param('fileId', ParseIntPipe) fileId: number,
+    @UserParam() {sub}: jwtType,
     ) {
-    return this.userFileService.remove(fileId);
+    return this.userFileService.remove(fileId, sub);
   }
 }

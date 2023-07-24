@@ -1,7 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { HttpException, HttpStatus, Injectable, BadRequestException } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { SentMessageInfo } from 'nodemailer';
 import { generateSendObject } from 'src/config/mailer.config';
 import { generateResponseMessage } from 'src/helpers/create-res-object';
 import { UserService } from '../user/user.service';
@@ -28,7 +26,7 @@ export class VerificationService {
             await this.kvStoreService.setVerificationProps(data)
 
             return true
-
+            // i disable sendMail because of trial version. It work only with valhodisevil@gmail.com or other email that i can include. 
             return await this.mailerService.sendMail(generateSendObject(email, verificationKey));
         } catch (error) {
             console.log(error)
@@ -50,9 +48,6 @@ export class VerificationService {
         if (parseInt(session.verificationTimestamp) + VERIFY_KEY_TIMESTAMP < Date.now()) {
             throw new BadRequestException(generateResponseMessage({message: `Sorry, but you overstayed your verification key. Please reauthenticate`}))
         }
-
-        console.log(session)
-        console.log(verifyCode)
 
         if (session.verificationKey !== verifyCode) {
             throw new BadRequestException(generateResponseMessage({message: `Wrong verification key`}))

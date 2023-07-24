@@ -3,13 +3,13 @@ import { UserFileService } from './user-file.service';
 import { UserFileController } from './user-file.controller';
 import { JwtHelperModule } from '../jwt-helper/jwt-helper.module';
 import { DatabaseModule } from '../database/database.module';
-import { MinioModule } from '../minio/minio.module';
+import { S3Module } from '../s3-store/s3-store.module';
 
 @Module({
   imports: [
     JwtHelperModule, 
     DatabaseModule, 
-    MinioModule
+    S3Module
   ],
   controllers: [UserFileController],
   providers: [UserFileService],

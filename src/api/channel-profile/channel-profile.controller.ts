@@ -21,6 +21,8 @@ import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
 import { ChannelRole } from '@prisma/client';
 import { FORBIDDEN_MESSAGE } from './constants/channel-profile.constants';
 import { ChannelProfileInterceptor } from './interceptors/channel-profile.interceptor';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 @ApiTags("channel-profile")
 @ApiBearerAuth()
@@ -49,15 +51,15 @@ export class ChannelProfileController {
 
   @Patch('/permission/:id')
   async updatePermission(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @Body() body: UpdateChannelProfileDto,
     @Param('id', ParseIntPipe) id: number){
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const userProfile = await this.channelProfileService.findById(id)
     const {channel_id} = userProfile
     const adminProfile = await this.channelProfileService.findBy({user_id: sub, channel_id: channel_id})
     const {role} = adminProfile
-    console.log(role)
+
     if(role !== ChannelRole.ADMIN && role !== ChannelRole.CREATOR){
       throw new ForbiddenException(FORBIDDEN_MESSAGE)
     }

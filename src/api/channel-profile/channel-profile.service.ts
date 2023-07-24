@@ -31,7 +31,6 @@ export class ChannelProfileService {
   }
 
   async update(id: number, data: UpdateChannelProfileDto) {
-    console.log('updated ', data)
     return await this.prismaService.channelProfile.update({
       data,
       where: {id}

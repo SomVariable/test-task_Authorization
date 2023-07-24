@@ -20,6 +20,8 @@ import { ChannelRole } from '@prisma/client';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
 import { ChannelInterceptor } from './interceptors/channel.interceptor';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 
 @ApiTags("channel")
@@ -37,9 +39,9 @@ export class ChannelController {
   @Post()
   async create(
     @Body() createChannelDto: CreateChannelDto,
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     ) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const channel = await  this.channelService.create(createChannelDto)
     
     const profile = await this.channelProfileService.create({

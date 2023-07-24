@@ -15,24 +15,26 @@ import { UserFileService } from '../user-file/user-file.service';
 import { JwtHelperService } from '../jwt-helper/jwt-helper.service';
 import { LIMIT_USERS } from './constants/user.constants';
 import { userResponse, userUnion, usersResponse } from './types/user.types';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 @ApiTags("user")
 @ApiBearerAuth()
 @Controller('user')
 @RolesDecorator(Role.ADMIN)
 @UseGuards(AccessJwtAuthGuard, RolesGuard)
+@UseInterceptors(UserInterceptor)
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly jwtHelperService: JwtHelperService
   ) { }
 
-  @UseInterceptors(UserInterceptor)
   @Get('')
   async getSelf(
-    @Headers('Authorization') authorization: string
+    @UserParam() jwtBody: jwtType
     ): Promise<userResponse> {
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const user = await this.userService.findById(sub);
 
     const res: userResponse = {
@@ -42,11 +44,12 @@ export class UserController {
     return res
   }
 
+
   @Delete('')
   async remove(
-    @Headers('Authorization') authorization: string)
+    @UserParam() jwtBody: jwtType)
     : Promise<userResponse> {
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const deletedUser = await this.userService.remove(sub);
 
     const res: userResponse = {
@@ -58,9 +61,9 @@ export class UserController {
 
   @Patch('')
   async update(
-    @Headers('Authorization') authorization: string, 
+    @UserParam() jwtBody: jwtType, 
     @Body() data: UpdateUserDto): Promise<userResponse>{
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const blockedUser = await this.userService.updateProperty(sub, data);
 
     const res: userResponse = {
@@ -72,9 +75,9 @@ export class UserController {
 
   @Patch('block')
   async block(
-    @Headers('Authorization') authorization: string
+    @UserParam() jwtBody: jwtType
     ): Promise<userResponse>{
-    const {sub} = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     const blockedUser = await this.userService.updateProperty(sub, { status: Status.BLOCKED });
 
     const res: userResponse = {

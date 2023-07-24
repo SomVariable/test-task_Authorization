@@ -9,7 +9,6 @@ export class AuthInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       map((data: any) => {
-
         return JSON.stringify(data);
       }),
     );

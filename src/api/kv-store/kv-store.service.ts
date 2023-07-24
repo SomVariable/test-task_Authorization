@@ -13,66 +13,67 @@ import { UpdateSessionDto } from './dto/update-session.dto';
 export class KvStoreService {
     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
-    async createSession({id}: CreateSession): Promise<Session>{
+    async createSession({ id }: CreateSession): Promise<Session> {
         try {
-        
+
             const session: Session = {
                 id,
                 verificationKey: null,
                 verificationTimestamp: null,
                 status: 'ACTIVE'
             }
-            
+
             await this.cacheManager.set(id, JSON.stringify(session));
             const sessionJSON: string = await this.cacheManager.get(id)
             const newSession: Session = await JSON.parse(sessionJSON)
             return newSession
         } catch (error) {
-            console.log(error)
+
+            throw new InternalServerErrorException(generateResponseMessage({ message: `server error. statusCode: ${error.status}` }))
         }
-        
+
     }
 
-    async setVerificationProps(data: UpdateVerifyDto): Promise<Session>{
+    async setVerificationProps(data: UpdateVerifyDto): Promise<Session> {
         try {
             const session: Session = await this.updateSession(data)
-            
+
             return session
 
         } catch (error) {
             console.log(error)
 
-            throw new InternalServerErrorException(generateResponseMessage({message: `server error. statusCode: ${error.status}`}))
+            throw new InternalServerErrorException(generateResponseMessage({ message: `server error. statusCode: ${error.status}` }))
         }
     }
 
 
-    async updateSession({id, ...data}: UpdateSessionDto): Promise<Session | null>{
+    async updateSession({ id, ...data }: UpdateSessionDto): Promise<Session | null> {
         const session: Session = await JSON.parse(await this.cacheManager.get(id));
-        console.log('session ', session)
-        if(!session){
+
+        if (!session) {
             return null
         }
 
-        const updateObject = JSON.stringify({...session, ...data})
-        
+        const updateObject = JSON.stringify({ ...session, ...data })
+
         await this.cacheManager.set(id, updateObject)
-        
+
         const isUpdated = await this.cacheManager.get(id)
 
-        if(isUpdated) {
+        if (isUpdated) {
             const updatedSession: Session = await JSON.parse(await this.cacheManager.get(id))
-            
+
             return updatedSession
         }
 
         return null
     }
 
-    async getSession({id}: CreateSession): Promise<Session>{
-        console.log(id)
+    async getSession({ id }: CreateSession): Promise<Session> {
+
         let dataFromStore: Session | string = await this.cacheManager.get(id)
-        if(typeof dataFromStore === 'string'){
+        if (typeof dataFromStore === 'string') {
             const session: Session = JSON.parse(dataFromStore)
 
             return session
@@ -81,58 +82,54 @@ export class KvStoreService {
     }
 
 
-    async blockSession({id}: CreateSession){
+    async blockSession({ id }: CreateSession) {
         const session: Session = await JSON.parse(await this.cacheManager.get(id));
 
-        if(!session || session.status === "BLOCKED"){
+        if (!session || session.status === "BLOCKED") {
             return null
         }
 
-        const updateObject = JSON.stringify({...session, status: "BLOCKED"})
+        const updateObject = JSON.stringify({ ...session, status: "BLOCKED" })
         await this.cacheManager.set(id, updateObject)
 
         const updatedSession = await JSON.parse(await this.cacheManager.get(id))
 
-        if(updatedSession.status === "BLOCKED") {
+        if (updatedSession.status === "BLOCKED") {
             const updatedSession: Session = await JSON.parse(await this.cacheManager.get(id))
-            
+
             return updatedSession
         }
 
         return null
     }
 
-    async activeSession({id}: CreateSession): Promise<Session>{
-        try {
-            const session: Session = await JSON.parse(await this.cacheManager.get(id));
-
-        if(!session || session.status === "ACTIVE"){
+    async activeSession({ id }: CreateSession): Promise<Session> {
+        const session: Session = await JSON.parse(await this.cacheManager.get(id));
+        console.log(session)
+        if (!session || session.status === "ACTIVE") {
             return null
         }
 
-        const updateObject = JSON.stringify({...session, status: "ACTIVE"})
+        const updateObject = JSON.stringify({ ...session, status: "ACTIVE" })
+        console.log('updateObject ', updateObject)
+        console.log('id ', id)
         await this.cacheManager.set(id, updateObject)
-        const updatedSession:Session = await JSON.parse(await this.cacheManager.get(id))
+        const updatedSession: Session = await JSON.parse(await this.cacheManager.get(id))
+        console.log('updatedSession ', updatedSession)
 
 
-        if(updatedSession.status !== 'ACTIVE') {
-            throw new Error()
+        if (updatedSession.status !== 'ACTIVE') {
+            return null
         }
 
         return updatedSession
-
-        } catch (error) {
-            console.log(error)
-
-            throw new InternalServerErrorException(generateResponseMessage({message: `server error. statusCode: ${error.status}`}))
-        }
     }
 
-    async deleteSession({id}: CreateSession): Promise<Session>{
+    async deleteSession({ id }: CreateSession): Promise<Session> {
         try {
             const session = await JSON.parse(await this.cacheManager.get(id))
 
-            if(!session) {
+            if (!session) {
                 throw new BadRequestException(MISSING_SESSION_MESSAGE(id))
             }
 
@@ -142,33 +139,12 @@ export class KvStoreService {
             return session
 
         } catch (error) {
-            console.log(error)
 
-            throw new InternalServerErrorException(generateResponseMessage({message: `server error. statusCode: ${error.status}`}))
+            throw new InternalServerErrorException(generateResponseMessage({ message: `server error. statusCode: ${error.status}` }))
         }
     }
 }
 
 
 
-
-
-//     async updateSession({id, ...data}: UpdateSessionDto): Promise<Session | null>{
-//         const session: Session = await JSON.parse(await this.cacheManager.get(id));
-//         console.log('session ', session)
-//         if(!session){
-//             return null
-//         }
-
-//         const updateObject = JSON.stringify({...session, ...data})
-//         const isUpdated: string = await this.cacheManager.set(id, updateObject)
-
-//         if(isUpdated === 'OK') {
-//             const updatedSession: Session = await JSON.parse(await this.cacheManager.get(id))
-            
-//             return updatedSession
-//         }
-
-//         return null
-//     }
 

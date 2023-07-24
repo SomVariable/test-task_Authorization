@@ -20,12 +20,14 @@ export class UserInterceptor implements NestInterceptor {
           status
         }
 
+
         responseObject = {
           message,
           data: excludeDataFromUser,
           additionalInfo
         }
 
+        console.log(responseObject)
 
         return JSON.stringify(responseObject);
       }),

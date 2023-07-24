@@ -29,7 +29,9 @@ export class UsersInterceptor implements NestInterceptor {
             additionalInfo
           }
 
-          return JSON.stringify(responseObject);
+          const returnData = JSON.stringify(responseObject)
+
+          return returnData;
         }
         const { birth_date, city, country, email, login } = users
 
@@ -43,6 +45,8 @@ export class UsersInterceptor implements NestInterceptor {
           page: page,
           additionalInfo
         }
+
+        console.log(responseObject)
 
         return JSON.stringify(responseObject);
       }),

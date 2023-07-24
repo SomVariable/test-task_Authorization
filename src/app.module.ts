@@ -13,10 +13,10 @@ import { KvStoreModule } from './api/kv-store/kv-store.module';
 import { UserProfileModule } from './api/user-profile/user-profile.module';
 import { UserFileModule } from './api/user-file/user-file.module';
 import { DatabaseModule } from './api/database/database.module';
-import { MinioModule } from './api/minio/minio.module';
 import { UserPostModule } from './api/user-post/user-post.module';
 import { ChannelProfileModule } from './api/channel-profile/channel-profile.module';
 import { ChannelModule } from './api/channel/channel.module';
+import { S3Module } from './api/s3-store/s3-store.module';
 
 @Module({
   imports: [ConfigModule.forRoot(
@@ -34,7 +34,7 @@ import { ChannelModule } from './api/channel/channel.module';
   JwtHelperModule,
   DatabaseModule,
   UserPostModule,
-  MinioModule,
+  S3Module,
   ChannelProfileModule,
   ChannelModule, 
 ],

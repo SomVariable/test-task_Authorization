@@ -21,10 +21,10 @@ export default () => ({
     REDIS_HOST: process.env.REDIS_HOST,
     REDIS_PORT: process.env.REDIS_PORT,
 
-    MINIO_HOST : process.env.MINIO_HOST,
-    MINIO_PORT : process.env.MINIO_PORT,
-    MINIO_ACCESS_KEY : process.env.MINIO_ROOT_USER,
-    MINIO_SECRET_KEY : process.env.MINIO_ROOT_PASSWORD,
+    S3_HOST : process.env.S3_HOST,
+    S3_PORT : process.env.S3_PORT,
+    S3_ACCESS_KEY : process.env.S3_ROOT_USER,
+    S3_SECRET_KEY : process.env.S3_ROOT_PASSWORD,
   });
 
 

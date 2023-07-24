@@ -1,15 +1,15 @@
-import { ERROR_MESSAGE } from './constants/minio.constants';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import * as Minio from 'minio'
-import { minioConfig } from 'src/config/minIo.config';
+import * as S3 from 'minio'
+import { S3Config } from 'src/config/S3.config';
+import { ERROR_MESSAGE } from './constants/s3-store.constants';
 
 @Injectable()
-export class MinioService {
-  private readonly client: Minio.Client;
+export class S3Service {
+  private readonly client: S3.Client;
   private readonly bucketName = 'user-files'
 
   constructor() {
-    this.client = new Minio.Client(minioConfig);
+    this.client = new S3.Client(S3Config);
   }
 
   async createBucket(): Promise<void> {
@@ -34,7 +34,6 @@ export class MinioService {
 
   async getFile(fileName: string): Promise<NodeJS.ReadableStream> {
     try {
-      console.log(fileName)
       const objectStream = await this.client.getObject(this.bucketName, fileName);
       return objectStream;
     } catch (error) {
@@ -43,10 +42,10 @@ export class MinioService {
     }
   }
 
-  async getFiles(): Promise<Minio.BucketItem[]> {
+  async getFiles(): Promise<S3.BucketItem[]> {
     try {
       const objectsStream = await this.client.listObjects(this.bucketName);
-      const files: Minio.BucketItem[] = [];
+      const files: S3.BucketItem[] = [];
   
       return new Promise((resolve, reject) => {
         objectsStream.on('data', (obj) => {

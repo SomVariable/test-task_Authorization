@@ -26,6 +26,8 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
+import { UserParam } from 'src/decorators/param-user.decorator';
+import { jwtType } from '../jwt-helper/types/jwt-helper.types';
 
 @ApiTags("user-posts")
 @ApiBearerAuth()
@@ -42,34 +44,34 @@ export class UserPostController {
   @ApiBody({ type: CreateUserPostDto })
   @UseInterceptors(FilesInterceptor('files'))
   async create(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @UploadedFiles() files: Array<Express.Multer.File>,
     @Body() data: CreateUserPostDto,
   ) {
     const {message, channel_id} = data
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userPostService.create({
       author_id: sub,
-      channel_id: parseInt(channel_id)
+      channel_id: channel_id? parseInt(channel_id): null
     }, message, files);
   }
 
   @Get()
   async findAll(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
   ) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
     
     return this.userPostService.findAll(sub);
   }
 
   @Get(':id')
   async findOne(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @Param('id', ParseIntPipe) id: number
     ) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userPostService.findOne(sub, id);
   }
@@ -79,22 +81,22 @@ export class UserPostController {
   @ApiBody({ type: UpdateUserPostDto })
   @UseInterceptors(FilesInterceptor('files'))
   async update(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @Body() data: UpdateUserPostDto,
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Array<Express.Multer.File>,
     ) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userPostService.update(sub, id, data, files);
   }
 
   @Delete(':id')
   async remove(
-    @Headers('Authorization') authorization: string,
+    @UserParam() jwtBody: jwtType,
     @Param('id', ParseIntPipe) postId: number, 
     ) {
-    const { sub } = await this.jwtHelperService.getDataFromJwt(authorization)
+    const {sub} = jwtBody
 
     return this.userPostService.remove(sub, postId);
   }

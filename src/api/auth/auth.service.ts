@@ -58,8 +58,8 @@ export class AuthService {
     const user = await this.validateUser(email, password)
     const sessionKey: string = generateSessionKey(String(user.id), deviceType)
 
-    this.kvStoreService.activeSession({id: sessionKey})
-    this.sendVerificationKey(email, sessionKey)
+    await this.kvStoreService.activeSession({id: sessionKey})
+    await this.sendVerificationKey(email, sessionKey)
     
     return user
   }

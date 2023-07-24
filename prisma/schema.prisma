@@ -19,8 +19,8 @@ model ChannelProfile {
   id   Int         @id @default(autoincrement())
   role ChannelRole @default(USER)
 
-  channel    Channel @relation(fields: [channel_id], references: [id])
-  user       User    @relation(fields: [user_id], references: [id])
+  channel    Channel @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   channel_id Int 
   user_id    Int 
 }
@@ -36,8 +36,8 @@ model User {
   updated_at                DateTime @updatedAt
 
   files          UserFile[]
-  profile        UserProfile?
-  post           UserPost[]
+  profile        UserProfile?  
+  post           UserPost[] 
   ChannelProfile ChannelProfile[]
 }
 
@@ -52,7 +52,7 @@ model UserProfile {
   updated_at DateTime @updatedAt
 
   avatar  UserFile?
-  user    User      @relation(fields: [user_id], references: [id])
+  user    User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id Int       @unique
 }
 
@@ -65,11 +65,11 @@ model UserFile {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  user         User         @relation(fields: [user_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   user_id      Int
-  profile      UserProfile? @relation(fields: [profile_id], references: [id])
+  profile      UserProfile? @relation(fields: [profile_id], references: [id], onDelete: Cascade)
   profile_id   Int?         @unique
-  user_post    UserPost?    @relation(fields: [user_post_id], references: [id])
+  user_post    UserPost?    @relation(fields: [user_post_id], references: [id], onDelete: Cascade)
   user_post_id Int?
 }
 
@@ -78,9 +78,9 @@ model UserPost {
   text  String
   files UserFile[]
 
-  author     User     @relation(fields: [author_id], references: [id])
+  author     User     @relation(fields: [author_id], references: [id], onDelete: Cascade)
   author_id  Int
-  channel    Channel? @relation(fields: [channel_id], references: [id])
+  channel    Channel? @relation(fields: [channel_id], references: [id], onDelete: Cascade)
   channel_id Int?
 }
 

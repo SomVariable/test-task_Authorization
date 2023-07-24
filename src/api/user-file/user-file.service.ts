@@ -1,19 +1,18 @@
 import { PrismaService } from './../database/prisma.service';
-import { Injectable } from '@nestjs/common';
-import { CreateUserFileDto } from './dto/create-user-file.dto';
-import { UpdateUserFileDto } from './dto/update-user-file.dto';
+import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { UserFile } from '@prisma/client';
-import { MinioService } from '../minio/minio.service';
 import { extname } from 'path';
 import {v4 as uuidv4} from 'uuid'
 import { IDsType, pickPostProps } from './types/user-file.types';
+import { S3Service } from '../s3-store/s3-store.service';
+import { ANOTHER_USER_FILE_MESSAGE, MISSING_FILE_MESSAGE } from './constants/user-file.constants';
 
 @Injectable()
 export class UserFileService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly minioService: MinioService
+    private readonly S3Service: S3Service
 
   ) {}
  
@@ -28,7 +27,7 @@ export class UserFileService {
     const {originalname, size, mimetype} = file
 
     const file_name = this.createFileName(originalname);
-    await this.minioService.uploadFile(file_name, file)
+    await this.S3Service.uploadFile(file_name, file)
 
     const fileData = await  this.prismaService.userFile.create({
       data: {
@@ -54,7 +53,7 @@ export class UserFileService {
 
     
     await files.forEach(async (file, index) => {
-      await this.minioService.uploadFile(file_names[index], file)
+      await this.S3Service.uploadFile(file_names[index], file)
     }) 
 
     const filesData = files.map(({size, originalname, mimetype}, id) => {
@@ -78,30 +77,50 @@ export class UserFileService {
 
   async findAll( {user_id, profile_id, user_post_id}: IDsType, IDs?: number[]
     ): Promise<UserFile[]> {
-    const file = await  this.prismaService.userFile.findMany({
+    const files = await  this.prismaService.userFile.findMany({
       where: {
         user_id,
         OR: [{profile_id}, {user_post_id}]
       }
     })
 
-    return file;
+    return files;
   }
 
-  async findOne(id: number) {
+  async findOne(file_id: number, user_id: number) {
     const file = await  this.prismaService.userFile.findFirst({
-      where: {id}
+      where: {id: file_id}
     })
+
+    if(!file){
+      throw new BadRequestException(MISSING_FILE_MESSAGE)
+    }
+
+    if( file.user_id !== user_id){
+      throw new ForbiddenException(ANOTHER_USER_FILE_MESSAGE)
+    }
 
     return file;
   }
 
-  async remove(id: number) {
-    const deletedFile = await  this.prismaService.userFile.delete({
-      where: {id}
+  async remove(file_id: number, user_id: number) {
+    const file = await  this.prismaService.userFile.findFirst({
+      where: {id: file_id}
     })
 
-    await this.minioService.deleteFile(deletedFile.file_name)
+    if( file.user_id !== user_id){
+      throw new ForbiddenException(ANOTHER_USER_FILE_MESSAGE)
+    }
+
+    const deletedFile = await this.prismaService.userFile.delete({
+      where: {id: file_id}
+    })
+
+    if(!deletedFile){
+      throw new BadRequestException(MISSING_FILE_MESSAGE)
+    }
+
+    await this.S3Service.deleteFile(deletedFile.file_name)
 
     return deletedFile;
   }
@@ -113,7 +132,7 @@ export class UserFileService {
     const filesNames = filesData.map(file => file.file_name)
     
     await filesNames.forEach(async (fileName) => {
-      await this.minioService.deleteFile(fileName)
+      await this.S3Service.deleteFile(fileName)
     })
 
     const files = await  this.prismaService.userFile.deleteMany({
