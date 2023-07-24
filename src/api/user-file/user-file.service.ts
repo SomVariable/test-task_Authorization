@@ -75,12 +75,14 @@ export class UserFileService {
     return createdFilesData;
   }
 
-  async findAll( {user_id, profile_id, user_post_id}: IDsType, IDs?: number[]
+  async findAll( {user_id, profile_id, user_post_id}: IDsType
     ): Promise<UserFile[]> {
     const files = await  this.prismaService.userFile.findMany({
       where: {
-        user_id,
-        OR: [{profile_id}, {user_post_id}]
+        AND: [
+          {user_id},
+          {OR: [{profile_id}, {user_post_id}]}
+        ]
       }
     })
 
@@ -125,19 +127,29 @@ export class UserFileService {
     return deletedFile;
   }
 
-  async removeMany(IDs: IDsType, files_IDs?: number[]) {
+  async removeMany(IDs: IDsType) {
+    console.log('IDs, files_IDs ', IDs)
+    const filesData = await this.findAll(IDs)
+    const files_ids = filesData?.map(fileData => fileData.id )
     
-    const filesData = await this.findAll(IDs, files_IDs)
-    
+
+    console.log('files_ids ', files_ids)
+
+
     const filesNames = filesData.map(file => file.file_name)
+
+    console.log('filesNames ', filesNames)
+
     
     await filesNames.forEach(async (fileName) => {
       await this.S3Service.deleteFile(fileName)
     })
 
-    const files = await  this.prismaService.userFile.deleteMany({
-      where: {id: {in: files_IDs}}
+    const files = await this.prismaService.userFile.deleteMany({
+      where: {id: {in: files_ids}}
     })
+
+    console.log("files ", files)
 
     return files;
   }
