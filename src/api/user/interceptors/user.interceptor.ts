@@ -27,8 +27,6 @@ export class UserInterceptor implements NestInterceptor {
           additionalInfo
         }
 
-        console.log(responseObject)
-
         return JSON.stringify(responseObject);
       }),
     );

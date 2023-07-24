@@ -1,15 +1,19 @@
 import { ConfigService } from '@nestjs/config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from 'src/api/user/user.service';
-import { FORBIDDEN_MESSAGE, JWT_REFRESH } from '../constants/auth.constants';
+import { BLOCKED_SESSION_MESSAGE, FORBIDDEN_MESSAGE, JWT_REFRESH } from '../constants/auth.constants';
 import { jwtType } from 'src/api/jwt-helper/types/jwt-helper.types';
+import { KvStoreService } from 'src/api/kv-store/kv-store.service';
 
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(Strategy, JWT_REFRESH) {
-  constructor(private readonly userService: UserService, configService: ConfigService) {
+  constructor(
+    private readonly userService: UserService, 
+    configService: ConfigService,
+    private readonly KvStoreService: KvStoreService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -18,10 +22,10 @@ export class RefreshJwtStrategy extends PassportStrategy(Strategy, JWT_REFRESH) 
   }
 
   async validate(payload: jwtType) {
-    const user = await this.userService.findBy( {email: payload.email} );
-    
-    if (!user) {
-      throw new UnauthorizedException(FORBIDDEN_MESSAGE);
+    const session = await this.KvStoreService.getSession({id: payload.sessionKey})
+
+    if(session?.status === 'BLOCKED'){
+      throw new BadRequestException(BLOCKED_SESSION_MESSAGE)
     }
 
     return payload;

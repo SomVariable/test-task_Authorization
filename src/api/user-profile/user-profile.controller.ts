@@ -19,15 +19,14 @@ import {
 import { UserProfileService } from './user-profile.service';
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { FindUserProfileDto } from './dto/find-user-profile.dto';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import * as FileType from 'file-type';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AccessJwtAuthGuard } from '../auth/guards/access-jwt.guard';
 import { UserProfileInterceptor } from './interceptors/user-profile.interceptor';
 import { imageFileFilter } from '../user-file/helpers/fileFilters.helper';
 import { UserParam } from 'src/decorators/param-user.decorator';
 import { jwtType } from '../jwt-helper/types/jwt-helper.types';
+import { API_FILE_CONFIG, IMAGE_FILE_MESSAGE } from '../user-file/constants/user-file.constants';
 
 @ApiTags("users-profile")
 @ApiBearerAuth()
@@ -62,17 +61,7 @@ export class UserProfileController {
   }
 
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
+  @ApiBody(API_FILE_CONFIG)
   @UseInterceptors(FileInterceptor('file', {
     fileFilter: imageFileFilter
   }))
@@ -85,7 +74,7 @@ export class UserProfileController {
     const {sub} = jwtBody
 
     if(!file || req.fileValidationError){
-      throw new BadRequestException('only image is allowed')
+      throw new BadRequestException(IMAGE_FILE_MESSAGE)
     }
 
     this.userFileService.create(file, {user_id: sub, profile_id: id})

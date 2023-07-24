@@ -28,6 +28,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { AuthUserInterceptor } from './interceptors/auth-user.interceptor';
 import { UserParam } from 'src/decorators/param-user.decorator';
 import { jwtType } from '../jwt-helper/types/jwt-helper.types';
+import { LocalAuthGuard } from './guards/local.guard';
 
 @ApiTags("auth")
 @UseInterceptors(AuthInterceptor)
@@ -59,7 +60,7 @@ export class AuthController {
 
   @UseInterceptors(AuthUserInterceptor)
   @Post('sign-in')
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(LocalAuthGuard)
   async signIn(@DeviceType() deviceType: string, @Body() { email, password }: SignInDto): Promise<authUserReturnType> {
     const user = await this.authService.signIn({ password, email }, deviceType);
 

@@ -128,18 +128,9 @@ export class UserFileService {
   }
 
   async removeMany(IDs: IDsType) {
-    console.log('IDs, files_IDs ', IDs)
     const filesData = await this.findAll(IDs)
     const files_ids = filesData?.map(fileData => fileData.id )
-    
-
-    console.log('files_ids ', files_ids)
-
-
     const filesNames = filesData.map(file => file.file_name)
-
-    console.log('filesNames ', filesNames)
-
     
     await filesNames.forEach(async (fileName) => {
       await this.S3Service.deleteFile(fileName)
@@ -148,8 +139,6 @@ export class UserFileService {
     const files = await this.prismaService.userFile.deleteMany({
       where: {id: {in: files_ids}}
     })
-
-    console.log("files ", files)
 
     return files;
   }

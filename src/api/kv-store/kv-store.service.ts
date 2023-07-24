@@ -71,8 +71,12 @@ export class KvStoreService {
     }
 
     async getSession({ id }: CreateSession): Promise<Session> {
-
         let dataFromStore: Session | string = await this.cacheManager.get(id)
+
+        if(!dataFromStore) {
+            throw new BadRequestException('there is no such session')
+        }
+
         if (typeof dataFromStore === 'string') {
             const session: Session = JSON.parse(dataFromStore)
 
@@ -105,18 +109,14 @@ export class KvStoreService {
 
     async activeSession({ id }: CreateSession): Promise<Session> {
         const session: Session = await JSON.parse(await this.cacheManager.get(id));
-        console.log(session)
+
         if (!session || session.status === "ACTIVE") {
             return null
         }
 
         const updateObject = JSON.stringify({ ...session, status: "ACTIVE" })
-        console.log('updateObject ', updateObject)
-        console.log('id ', id)
         await this.cacheManager.set(id, updateObject)
         const updatedSession: Session = await JSON.parse(await this.cacheManager.get(id))
-        console.log('updatedSession ', updatedSession)
-
 
         if (updatedSession.status !== 'ACTIVE') {
             return null

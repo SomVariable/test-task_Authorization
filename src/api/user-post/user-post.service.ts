@@ -13,7 +13,6 @@ export class UserPostService {
   ) { }
 
   async create(IDs: PostIDsType, message: string, files?: Express.Multer.File[]) {
-    console.log(IDs)
     const newPostData = await this.prismaService.userPost.create({
       data: {
         text: message,
@@ -44,7 +43,6 @@ export class UserPostService {
   }
 
   async update(userId: number, id: number, {message}: UpdateUserPostDto, newFiles: Express.Multer.File[]) {
-    console.log(userId, id, message, newFiles)
     await this.userFileService.removeMany({
       user_id: userId, 
       user_post_id: id
@@ -66,7 +64,6 @@ export class UserPostService {
   }
 
   async remove(userId: number, postId: number) {
-    console.log(postId)
     const deletedPost = await this.prismaService.userPost.delete({
       where: {id: postId}
     })
