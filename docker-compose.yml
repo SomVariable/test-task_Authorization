@@ -1,0 +1,52 @@
+version: '3'
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    restart: always
+    container_name: social-media
+    profiles: ["backend"]
+    ports:
+      - 3000:3000
+    networks:
+      - social-media
+    volumes:
+      - ./.env:/app/.env
+    depends_on:
+      - sm-redis
+      - sm-s3
+  sm-redis:
+    image: redis
+    container_name: sm-redis-store
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - social-media
+    profiles: ["backend"]
+    volumes:
+      - sm-redis_data:/data
+    command: redis-server --appendonly yes
+  sm-s3:
+    image: 'bitnami/minio:latest'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=ROOTNAME
+      - MINIO_ROOT_PASSWORD=CHANGEME123
+    profiles: ["backend"]
+    networks:
+      - social-media
+    volumes:
+      - sm-s3:/data
+
+networks:
+  social-media:
+    driver: bridge
+
+volumes:
+  sm-s3: 
+  sm-redis_data:

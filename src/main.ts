@@ -2,7 +2,6 @@ import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import * as cookieParser from 'cookie-parser';
 import { PrismaClientExceptionFilter } from 'nestjs-prisma';
 
 async function bootstrap() {
@@ -12,7 +11,7 @@ async function bootstrap() {
   app.enableCors({ credentials: true, origin: true });
   app.useGlobalPipes(new ValidationPipe({transform: true, whitelist: true}));
   app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapter))
-  app.use(cookieParser());
+
 
   const config = new DocumentBuilder()
     .setTitle('authorization task')
