@@ -12,6 +12,7 @@ ADD package.json ./
 RUN npm i --only=prod
 COPY --from=build /app/prisma ./prisma
 RUN npx prisma generate
+RUN npx prisma migrate dev --name init
 COPY --from=build /app/dist ./dist
 CMD ["node", "./dist/main.js"]
 

@@ -42,6 +42,13 @@ services:
       - social-media
     volumes:
       - sm-s3:/data
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=HxH787898HxH@hunter.com
+      - POSTGRES_USER=variable
+      - POSTGRES_DB=sm-db
 
 networks:
   social-media:
