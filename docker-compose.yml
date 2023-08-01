@@ -16,6 +16,7 @@ services:
     depends_on:
       - sm-redis
       - sm-s3
+      - sm-db
   sm-redis:
     image: redis
     container_name: sm-redis-store
@@ -30,6 +31,7 @@ services:
     command: redis-server --appendonly yes
   sm-s3:
     image: 'bitnami/minio:latest'
+    container_name: sm-s3-store
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -42,8 +44,11 @@ services:
       - social-media
     volumes:
       - sm-s3:/data
-  db:
+  sm-db:
     image: postgres
+    container_name: sm-database
+    ports:
+      - '5432:5432'
     restart: always
     environment:
       - POSTGRES_PASSWORD=HxH787898HxH@hunter.com
