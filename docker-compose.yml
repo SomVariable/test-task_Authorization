@@ -1,14 +1,15 @@
 version: '3'
 services:
   api:
-    build: 
+    build:
       context: .
       dockerfile: ./Dockerfile
-    restart: always
     container_name: social-media
     profiles: ["backend"]
     ports:
       - 3000:3000
+    environment:
+      - DATABASE_URL=postgresql://variable:HxH787898HxH@hunter.com@sm-database:5432/sm-db
     networks:
       - social-media
     volumes:
@@ -16,13 +17,13 @@ services:
     depends_on:
       - sm-redis
       - sm-s3
-      - sm-db
+      - db
   sm-redis:
     image: redis
     container_name: sm-redis-store
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     networks:
       - social-media
     profiles: ["backend"]
@@ -44,11 +45,12 @@ services:
       - social-media
     volumes:
       - sm-s3:/data
-  sm-db:
+  db:
     image: postgres
     container_name: sm-database
-    ports:
-      - '5432:5432'
+    networks:
+      - social-media
+    profiles: ["backend"]
     restart: always
     environment:
       - POSTGRES_PASSWORD=HxH787898HxH@hunter.com
@@ -60,5 +62,5 @@ networks:
     driver: bridge
 
 volumes:
-  sm-s3: 
+  sm-s3:
   sm-redis_data:
