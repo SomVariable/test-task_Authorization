@@ -1,15 +1,10 @@
-FROM node:18-alpine as build
+FROM node:18 as build
 WORKDIR /app
-COPY *.json ./
+COPY package*.json ./
 RUN npm install
-ADD . .
+COPY ./prisma ./prisma
 RUN npx prisma generate
+ADD . .
 RUN npm run build
-
-FROM node:18-alpine
-WORKDIR /app
-ADD package.json ./
-RUN npm i --only=prod
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/dist ./dist
+EXPOSE 3000 
+ENTRYPOINT ["node", "./dist/main.js"]

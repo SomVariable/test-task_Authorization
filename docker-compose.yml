@@ -21,7 +21,6 @@ services:
       - sm-redis
       - sm-s3
       - db
-    command: sh -c "sleep 10 && npx prisma migrate dev --name init && node ./dist/main.js"
   sm-redis:
     image: redis
     container_name: sm-redis-store
@@ -52,6 +51,8 @@ services:
   db:
     image: postgres
     container_name: sm-database
+    ports:
+      -'5432:5432'
     networks:
       - social-media
     profiles: ["backend"]
